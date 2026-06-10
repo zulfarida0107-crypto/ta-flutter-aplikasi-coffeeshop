@@ -264,8 +264,8 @@ class _PesanKontakPageState extends State<PesanKontakPage> {
                                 ),
                                 onPressed: () async {
                                   if (kotakPesan.id != null) {
-                                    await DatabaseHelper.getInstance()
-                                        .deletePesanKontak(kotakPesan.id);
+                                      await DatabaseHelper.getInstance()
+                                          .deletePesanKontak(kotakPesan.id!);
                                   }
                                   if (!ctx.mounted) return;
                                   Navigator.pop(ctx);

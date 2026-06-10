@@ -5,7 +5,8 @@ import 'daftar_pesanan_page.dart';
 import 'desain_pesanan_page.dart';
 import 'pesan_kontak_page.dart';
 import 'pembayaran_pesanan_page.dart';
-import 'login_page.dart';
+// import 'login_page.dart';
+import 'menu_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -32,7 +33,7 @@ class HomePage extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   content: const Text(
-                    "Apakah Anda Yakin ngin Keluar?",
+                    "Apakah Anda Yakin ingin Keluar?",
                     style: TextStyle(fontSize: 16),
                   ),
                   actions: [
@@ -49,13 +50,13 @@ class HomePage extends StatelessWidget {
                       ),
                       onPressed: () {
                         Navigator.pop(context); // tutup dialog
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginPage(),
-                          ),
-                          (route) => false, // hapus semua stack
-                        );
+                        // Navigator.pushAndRemoveUntil(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) => const LoginPage(),
+                        //   ),
+                        //   (route) => false, // hapus semua stack
+                        // );
                       },
                       child: const Text(
                         "Ya",
@@ -144,8 +145,21 @@ class HomePage extends StatelessWidget {
               ),
             ),
           ),
+          _buildMenuCard(
+            context,
+            'Katalog Produk (API)',
+            Icons.cloud_sync,
+            Colors.brown,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MenuScreen(),
+              ),
+            ),
+          ),
         ],
       ),
+
     );
   }
 

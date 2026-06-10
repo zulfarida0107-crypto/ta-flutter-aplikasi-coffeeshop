@@ -11,13 +11,14 @@ import 'package:flutter_test/flutter_test.dart';
 // Pastikan import ini sesuai dengan nama project kamu yang sebenarnya di pubspec.yaml
 // Jika nama project berbeda dari 'flutter_coffeeshop', sesuaikan bagian 'package:...' ini.
 import 'package:flutter_coffeeshop/main.dart';
+import 'package:flutter_coffeeshop/screens/login_page.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     // PERBAIKAN: Kami menambahkan parameter initialPage: 0 (index halaman pertama)
     // agar MyApp bisa dibuat (instantiated) sesuai dengan required parameter barunya.
-    await tester.pumpWidget(const MyApp(initialPage: 0));
+    await tester.pumpWidget(const MyApp(initialPage: LoginPage()));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

@@ -1,5 +1,3 @@
-// ISI KODE FILE C:\Dokumen\flutter-coffeeshop-1 (DONE)\lib\data\database_helper.dart
-
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -14,7 +12,7 @@ class DatabaseHelper {
   late Database _database;
 
   static const String _DATABASE_NAME = "db_kantin";
-  static const int _DATABASE_VERSION = 2;
+  static const int _DATABASE_VERSION = 1;
   static DatabaseHelper? _instance;
 
   static DatabaseHelper getInstance() {
@@ -28,17 +26,6 @@ class DatabaseHelper {
     getInstance()._database = await openDatabase(
       path,
       version: _DATABASE_VERSION,
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          try {
-            await db.execute(
-              "ALTER TABLE ${PesananEntity.TABLE_NAME} ADD COLUMN ${PesananEntity.COL_DETAIL_PESANAN_KEY} TEXT DEFAULT '[]'",
-            );
-          } catch (e) {
-            // Abaikan jika sudah ada
-          }
-        }
-      },
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE ${UserEntity.TABLE_NAME} (
@@ -68,8 +55,7 @@ class DatabaseHelper {
             ${PesananEntity.COL_JUMLAH_KEY} INTEGER NOT NULL,
             ${PesananEntity.COL_TOTAL_HARGA_KEY} REAL NOT NULL,
             ${PesananEntity.COL_STATUS_PESANAN_KEY} TEXT NOT NULL,
-            ${PesananEntity.COL_TANGGAL_PESANAN_KEY} TEXT DEFAULT CURRENT_TIMESTAMP,
-            ${PesananEntity.COL_DETAIL_PESANAN_KEY} TEXT DEFAULT '[]'
+            ${PesananEntity.COL_TANGGAL_PESANAN_KEY} TEXT DEFAULT CURRENT_TIMESTAMP
           )
         ''');
 
@@ -98,23 +84,8 @@ class DatabaseHelper {
   }
 
   // ==========================================
-  // 1. MANAJEMEN USER (Tambah, Edit, Delete, View All, Login)
+  // 1. MANAJEMEN USER (Tambah, Edit, Delete, View All)
   // ==========================================
-  Future<UserEntity?> loginUser(String username, String password) async {
-    try {
-      var queryResult = await _database.rawQuery(
-        "SELECT * FROM ${UserEntity.TABLE_NAME} WHERE ${UserEntity.COL_USERNAME_KEY} = ? AND ${UserEntity.COL_PASSWORD_KEY} = ?",
-        [username, password],
-      );
-      if (queryResult.isNotEmpty) {
-        return UserEntity.fromMap(queryResult.first);
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-
   Future<bool> createUser(UserEntity entity) async {
     var mapData = entity.toMap();
     if (mapData[UserEntity.COL_ID_KEY] == 0) {
@@ -360,23 +331,6 @@ class DatabaseHelper {
     }
   }
 
-  Future<bool> updateDesainPesananWithOldId(
-    int oldId,
-    DesainPesananEntity entity,
-  ) async {
-    try {
-      int rowAffected = await _database.update(
-        DesainPesananEntity.TABLE_NAME,
-        entity.toMap(),
-        where: "${DesainPesananEntity.COL_ID_KEY} = ?",
-        whereArgs: [oldId],
-      );
-      return rowAffected > 0;
-    } catch (e) {
-      return false;
-    }
-  }
-
   Future<bool> deleteDesainPesanan(int id) async {
     try {
       await _database.delete(
@@ -391,12 +345,13 @@ class DatabaseHelper {
   }
 
   // ==========================================
-  // 5. DAFTAR PESAN MASUK / KONTAK (Hanya Delete & View Detail)
+  // 5. DAFTAR PESAN MASUK / KONTAK (Tambah, Delete & View Detail)
   // ==========================================
+
   Future<bool> createPesanKontak(PesanKontakEntity entity) async {
     var mapData = entity.toMap();
-    if (mapData[PesanKontakEntity.COL_ID_KEY] == null) {
-      mapData.remove(PesanKontakEntity.COL_ID_KEY);
+    if (mapData[PesanKontakEntity.COL_ID_KEY] == 0 || mapData[PesanKontakEntity.COL_ID_KEY] == null) {
+      mapData[PesanKontakEntity.COL_ID_KEY] = null;
     }
     try {
       await _database.insert(PesanKontakEntity.TABLE_NAME, mapData);
@@ -432,8 +387,7 @@ class DatabaseHelper {
     }
   }
 
-  Future<bool> deletePesanKontak(int? id) async {
-    if (id == null) return false;
+  Future<bool> deletePesanKontak(int id) async {
     try {
       await _database.delete(
         PesanKontakEntity.TABLE_NAME,
@@ -446,12 +400,39 @@ class DatabaseHelper {
     }
   }
 
+  // --- ADDED METHODS FROM API TO MATCH EXISTING CODEBASE ---
+  Future<UserEntity?> loginUser(String username, String password) async {
+    try {
+      var queryResult = await _database.rawQuery(
+        "SELECT * FROM ${UserEntity.TABLE_NAME} WHERE ${UserEntity.COL_USERNAME_KEY} = ? AND ${UserEntity.COL_PASSWORD_KEY} = ?",
+        [username, password],
+      );
+      if (queryResult.isNotEmpty) {
+        return UserEntity.fromMap(queryResult.first);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<bool> updateDesainPesananWithOldId(int oldId, DesainPesananEntity entity) async {
+    try {
+      int rowAffected = await _database.update(
+        DesainPesananEntity.TABLE_NAME,
+        entity.toMap(),
+        where: "${DesainPesananEntity.COL_ID_KEY} = ?",
+        whereArgs: [oldId],
+      );
+      return rowAffected > 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> deleteAllPesanKontak() async {
     try {
       await _database.delete(PesanKontakEntity.TABLE_NAME);
-      await _database.execute(
-        "DELETE FROM sqlite_sequence WHERE name = '${PesanKontakEntity.TABLE_NAME}'",
-      );
       return true;
     } catch (e) {
       return false;

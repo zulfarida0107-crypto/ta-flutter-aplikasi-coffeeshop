@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'data/database_helper.dart';
-import 'screens/login_page.dart';
+
+// import 'screens/login_page.dart';
+import 'screens/home_page.dart'; // Direct to home
 import 'screens/desain_pesanan_page.dart'; // Import halaman desain
 
 void main() async {
@@ -20,7 +22,7 @@ void main() async {
     MyApp(
       initialPage: isInDesainPage
           ? const DesainPesananPage()
-          : const LoginPage(),
+          : const HomePage(), // const LoginPage(),
     ),
   );
 }
@@ -58,10 +60,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       // KHUSUS: Jika sedang TIDAK di halaman desain, lempar ke Login saat background
       // Ini memenuhi syarat 2B (halaman lain tetap harus login ulang)
       if (!isInDesainPage) {
-        navigatorKey.currentState?.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-          (route) => false,
-        );
+        // navigatorKey.currentState?.pushAndRemoveUntil(
+        //   MaterialPageRoute(builder: (context) => const LoginPage()),
+        //   (route) => false,
+        // );
       }
     }
   }
@@ -77,7 +79,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         useMaterial3: true,
       ),
       // Menggunakan initialPage yang dikirim dari fungsi main()
-      home: const LoginPage(),
+      home: widget.initialPage,
     );
   }
 }

@@ -20,12 +20,7 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
     _fetchData();
   }
 
-  void _refreshData() async {
-    var data = await DatabaseHelper.getInstance().getAllPesanan();
-    setState(() {
-      listPembayaran = data;
-    });
-  }
+
 
   void _fetchData() async {
     setState(() => isLoading = true);
