@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../data/database_helper.dart';
 import '../models/user_entity.dart';
+import '../services/api_service.dart';
 
 class ManajemenUserPage extends StatefulWidget {
   const ManajemenUserPage({super.key});
@@ -11,18 +11,20 @@ class ManajemenUserPage extends StatefulWidget {
 
 class _ManajemenUserPageState extends State<ManajemenUserPage> {
   List<UserEntity> listUser = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _refreshData(); // Ambil data pas halaman dibuka
+    _refreshData();
   }
 
-  // Fungsi buat ambil data terbaru dari database
   void _refreshData() async {
-    var data = await DatabaseHelper.getInstance().getAllUser();
+    setState(() => isLoading = true);
+    var data = await ApiService.getAllUsers();
     setState(() {
       listUser = data;
+      isLoading = false;
     });
   }
 
@@ -36,108 +38,114 @@ class _ManajemenUserPageState extends State<ManajemenUserPage> {
         ),
         backgroundColor: Colors.brown[800],
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _refreshData,
+          ),
+        ],
       ),
-      body: listUser.isEmpty
-          ? const Center(child: Text("Belum ada user. Klik + untuk tambah!"))
-          : ListView.builder(
-              itemCount: listUser.length,
-              itemBuilder: (context, index) {
-                var user = listUser[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  elevation: 2,
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.brown[100],
-                      child: const Icon(Icons.person, color: Colors.white),
-                    ),
-                    title: Text(
-                      "ID: ${user.id} - ${user.namaLengkap}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Row(
-                      children: [
-                        _buildRoleBadge(user.role),
-                        const SizedBox(width: 8),
-                        Text(user.username),
-                      ],
-                    ),
-                    onTap: () {
-                      _showDetailDialog(user);
-                    },
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () {
-                            _showFormDialog(user: user);
-                          },
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.brown))
+          : listUser.isEmpty
+              ? const Center(child: Text("Belum ada user. Klik + untuk tambah!"))
+              : ListView.builder(
+                  itemCount: listUser.length,
+                  itemBuilder: (context, index) {
+                    var user = listUser[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      elevation: 2,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.brown[100],
+                          child: const Icon(Icons.person, color: Colors.white),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text(
-                                  "Konfirmasi Akses",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                content: const Text(
-                                  "Apakah anda yakin menghapus akses?",
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text(
-                                      "tidak",
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                    ),
-                                    onPressed: () async {
-                                      await DatabaseHelper.getInstance()
-                                          .deleteUser(user.id!);
-                                      if (context.mounted) {
-                                        Navigator.pop(context);
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              "Data berhasil dihapus permanen",
-                                            ),
-                                            backgroundColor: Colors.brown,
-                                          ),
-                                        );
-                                      }
-                                      _refreshData();
-                                    },
-                                    child: const Text(
-                                      "ya",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                        title: Text(
+                          "ID: ${user.id} - ${user.namaLengkap}",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+                        subtitle: Row(
+                          children: [
+                            _buildRoleBadge(user.role),
+                            const SizedBox(width: 8),
+                            Text(user.username),
+                          ],
+                        ),
+                        onTap: () {
+                          _showDetailDialog(user);
+                        },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () {
+                                _showFormDialog(user: user);
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text(
+                                      "Konfirmasi Akses",
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    content: const Text(
+                                      "Apakah anda yakin menghapus akses?",
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text(
+                                          "tidak",
+                                          style: TextStyle(color: Colors.grey),
+                                        ),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                        ),
+                                        onPressed: () async {
+                                          await ApiService.deleteUser(user.id!);
+                                          if (context.mounted) {
+                                            Navigator.pop(context);
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "Data berhasil dihapus permanen",
+                                                ),
+                                                backgroundColor: Colors.brown,
+                                              ),
+                                            );
+                                          }
+                                          _refreshData();
+                                        },
+                                        child: const Text(
+                                          "ya",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.brown,
         onPressed: () {
@@ -226,11 +234,10 @@ class _ManajemenUserPageState extends State<ManajemenUserPage> {
     );
   }
 
-  // --- POP-UP FORM UNTUK TAMBAH & EDIT (ID OTOMATIS) ---
+  // --- POP-UP FORM UNTUK TAMBAH & EDIT ---
   void _showFormDialog({UserEntity? user}) {
     bool isEdit = user != null;
 
-    // Controller ID dihapus karena sekarang otomatis
     TextEditingController namaController = TextEditingController(
       text: isEdit ? user.namaLengkap : "",
     );
@@ -253,7 +260,6 @@ class _ManajemenUserPageState extends State<ManajemenUserPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // TextField ID Dihapus agar user tidak bisa ketik manual
               TextField(
                 controller: namaController,
                 decoration: const InputDecoration(labelText: "Nama Lengkap"),
@@ -300,7 +306,6 @@ class _ManajemenUserPageState extends State<ManajemenUserPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
             onPressed: () async {
-              // Membuat objek UserEntity (ID dikirim null jika Tambah Baru)
               UserEntity userBaru = UserEntity(
                 id: isEdit ? user.id : null,
                 username: usernameController.text,
@@ -309,10 +314,11 @@ class _ManajemenUserPageState extends State<ManajemenUserPage> {
                 role: selectedRole,
               );
 
+              bool success;
               if (isEdit) {
-                await DatabaseHelper.getInstance().updateUser(userBaru);
+                success = await ApiService.updateUser(userBaru);
               } else {
-                await DatabaseHelper.getInstance().createUser(userBaru);
+                success = await ApiService.createUser(userBaru);
               }
 
               if (mounted) {
@@ -320,14 +326,16 @@ class _ManajemenUserPageState extends State<ManajemenUserPage> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      isEdit ? "Data diperbarui" : "User berhasil ditambah",
+                      success
+                          ? (isEdit ? "Data diperbarui" : "User berhasil ditambah")
+                          : "Gagal menyimpan data",
                     ),
-                    backgroundColor: Colors.green,
+                    backgroundColor: success ? Colors.green : Colors.red,
                   ),
                 );
               }
 
-              _refreshData(); // Simsalabim! Data langsung muncul di list
+              _refreshData();
             },
             child: const Text("Simpan", style: TextStyle(color: Colors.white)),
           ),

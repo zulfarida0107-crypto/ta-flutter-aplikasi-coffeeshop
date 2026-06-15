@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../data/database_helper.dart';
 import '../models/pesanan_entity.dart';
 import '../models/menu_produk_entity.dart';
-// Sesuaikan dengan path file Anda
+import '../services/api_service.dart';
 
 class DaftarPesananPage extends StatefulWidget {
   const DaftarPesananPage({super.key});
@@ -14,6 +13,7 @@ class DaftarPesananPage extends StatefulWidget {
 
 class _DaftarPesananPageState extends State<DaftarPesananPage> {
   List<PesananEntity> listPesanan = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -22,11 +22,13 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
   }
 
   void _refreshData() async {
-    var data = await DatabaseHelper.getInstance().getAllPesanan();
+    setState(() => isLoading = true);
+    var data = await ApiService.getAllPesanan();
     setState(() {
       listPesanan = data
           .where((p) => p.statusPesanan.toLowerCase() == 'baru')
           .toList();
+      isLoading = false;
     });
   }
 
@@ -54,137 +56,142 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
           'Daftar Pesanan Masuk',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.brown[800], // Tema Orange
+        backgroundColor: Colors.brown[800],
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _refreshData,
+          ),
+        ],
       ),
-      body: listPesanan.isEmpty
-          ? const Center(child: Text("Belum ada pesanan. Klik + untuk tambah!"))
-          : ListView.builder(
-              itemCount: listPesanan.length,
-              itemBuilder: (context, index) {
-                var pesanan = listPesanan[index];
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.brown))
+          : listPesanan.isEmpty
+              ? const Center(child: Text("Belum ada pesanan masuk."))
+              : ListView.builder(
+                  itemCount: listPesanan.length,
+                  itemBuilder: (context, index) {
+                    var pesanan = listPesanan[index];
 
-                // Menentukan item/qty preview
-                int totalItem = pesanan.jumlah;
-                try {
-                  if (pesanan.detailPesanan.isNotEmpty &&
-                      pesanan.detailPesanan != '[]') {
-                    List<dynamic> items = jsonDecode(pesanan.detailPesanan);
-                    totalItem = items.fold(
-                      0,
-                      (sum, it) => sum + (it['qty'] as int),
-                    );
-                  }
-                } catch (_) {}
+                    // Menentukan item/qty preview
+                    int totalItem = pesanan.jumlah;
+                    try {
+                      if (pesanan.detailPesanan.isNotEmpty &&
+                          pesanan.detailPesanan != '[]') {
+                        List<dynamic> items = jsonDecode(pesanan.detailPesanan);
+                        totalItem = items.fold(
+                          0,
+                          (sum, it) => sum + ((it['qty'] ?? it['quantity'] ?? 1) as int),
+                        );
+                      }
+                    } catch (_) {}
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  elevation: 2,
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.brown[100],
-                      child: const Icon(
-                        Icons.shopping_cart,
-                        color: Colors.brown,
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                    ),
-                    title: Text(
-                      pesanan.namaPelanggan,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Row(
-                      children: [
-                        _buildStatusBadge(pesanan.statusPesanan),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            "Rp ${formatRupiah(pesanan.totalHarga)} ($totalItem item)",
-                            overflow: TextOverflow.ellipsis,
+                      elevation: 2,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.brown[100],
+                          child: const Icon(
+                            Icons.shopping_cart,
+                            color: Colors.brown,
                           ),
                         ),
-                      ],
-                    ),
-                    onTap: () {
-                      _showDetailDialog(pesanan);
-                    },
-                    trailing: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () {
-                              _showFormDialog(pesanan: pesanan);
-                            },
+                        title: Text(
+                          pesanan.namaPelanggan,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Row(
+                          children: [
+                            _buildStatusBadge(pesanan.statusPesanan),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                "Rp ${formatRupiah(pesanan.totalHarga)} ($totalItem item)",
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          _showDetailDialog(pesanan);
+                        },
+                        trailing: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () {
+                                  _showFormDialog(pesanan: pesanan);
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text(
+                                        "Konfirmasi Hapus",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      content: const Text(
+                                        "Apakah anda yakin menghapus data ini?",
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context),
+                                          child: const Text(
+                                            "tidak",
+                                            style: TextStyle(color: Colors.grey),
+                                          ),
+                                        ),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                          ),
+                                          onPressed: () async {
+                                            await ApiService.deletePesanan(pesanan.id);
+                                            if (context.mounted) {
+                                              Navigator.pop(context);
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    "Data berhasil dihapus permanen",
+                                                  ),
+                                                  backgroundColor: Colors.brown,
+                                                ),
+                                              );
+                                            }
+                                            _refreshData();
+                                          },
+                                          child: const Text(
+                                            "ya",
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text(
-                                    "Konfirmasi Hapus",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  content: const Text(
-                                    "Apakah anda yakin menghapus data ini?",
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text(
-                                        "tidak",
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                    ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red,
-                                      ),
-                                      onPressed: () async {
-                                        await DatabaseHelper.getInstance()
-                                            .deletePesanan(pesanan.id);
-                                        if (context.mounted) {
-                                          Navigator.pop(
-                                            context,
-                                          ); // Tutup dialog
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                "Data berhasil dihapus permanen",
-                                              ),
-                                              backgroundColor: Colors.brown,
-                                            ),
-                                          );
-                                        }
-                                        _refreshData();
-                                      },
-                                      child: const Text(
-                                        "ya",
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.brown,
         onPressed: () {
@@ -275,10 +282,14 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                   ),
                   const SizedBox(height: 4),
                   ...items.map((item) {
+                    // Support both CI4 format (qty/price) and Flutter format (qty/subtotal)
+                    final name = item['namaProduk'] ?? item['name'] ?? '-';
+                    final qty = item['qty'] ?? item['quantity'] ?? 1;
+                    final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 4.0),
                       child: Text(
-                        "- ${item['namaProduk']} x${item['qty']} (Rp ${formatRupiah(item['subtotal'])})",
+                        "- $name x$qty (Rp ${formatRupiah(subtotal)})",
                         style: const TextStyle(fontSize: 14),
                       ),
                     );
@@ -322,8 +333,7 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
   void _showFormDialog({PesananEntity? pesanan}) async {
     bool isEdit = pesanan != null;
 
-    List<MenuProdukEntity> listMenu = await DatabaseHelper.getInstance()
-        .getAllMenuProduk();
+    List<MenuProdukEntity> listMenu = await ApiService.getAllMenuProduk();
     if (listMenu.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -340,9 +350,11 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
     TextEditingController namaController = TextEditingController(
       text: isEdit ? pesanan.namaPelanggan : "",
     );
-    String selectedStatus = isEdit ? pesanan.statusPesanan : "Baru";
-    if (!['Baru', 'Proses', 'Selesai'].contains(selectedStatus)) {
-      selectedStatus = "Baru";
+    String selectedStatus = "Baru";
+    if (isEdit) {
+      if (pesanan.statusPesanan.toLowerCase() == 'baru') selectedStatus = 'Baru';
+      else if (pesanan.statusPesanan.toLowerCase() == 'proses') selectedStatus = 'Proses';
+      else if (pesanan.statusPesanan.toLowerCase() == 'selesai') selectedStatus = 'Selesai';
     }
 
     // items merepresentasikan baris pesanan dinamis
@@ -354,12 +366,19 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
         try {
           List<dynamic> parsed = jsonDecode(pesanan.detailPesanan);
           for (var item in parsed) {
+            int? idProd = item['idProduk'] != null
+                ? (item['idProduk'] is int ? item['idProduk'] : int.tryParse(item['idProduk'].toString()))
+                : (item['id'] != null ? (item['id'] is int ? item['id'] : int.tryParse(item['id'].toString())) : null);
+            
+            double harga = ((item['harga'] ?? item['price'] ?? 0) as num).toDouble();
+            int qty = item['qty'] ?? item['quantity'] ?? 1;
+
             menuItems.add({
-              "idProduk": item['idProduk'],
-              "namaProduk": item['namaProduk'],
-              "harga": (item['harga'] ?? 0).toDouble(),
-              "qty": item['qty'] ?? 1,
-              "subtotal": (item['subtotal'] ?? 0).toDouble(),
+              "idProduk": idProd,
+              "namaProduk": item['namaProduk'] ?? item['name'] ?? '',
+              "harga": harga,
+              "qty": qty,
+              "subtotal": ((item['subtotal'] ?? (harga * qty)) as num).toDouble(),
             });
           }
           grandTotal = pesanan.totalHarga;
@@ -371,9 +390,7 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
         menuItems.add({
           "idProduk": pesanan.idProduk,
           "namaProduk": "ID Produk: ${pesanan.idProduk}",
-          "harga": pesanan.jumlah > 0
-              ? pesanan.totalHarga / pesanan.jumlah
-              : 0.0,
+          "harga": pesanan.jumlah > 0 ? pesanan.totalHarga / pesanan.jumlah : 0.0,
           "qty": pesanan.jumlah,
           "subtotal": pesanan.totalHarga,
         });
@@ -459,15 +476,14 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                         );
 
                         return Card(
-                          color:
-                              Colors.transparent, // Background tembus pandang
+                          color: Colors.transparent,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                             side: const BorderSide(
                               color: Colors.brown,
                               width: 2,
-                            ), // Grid tebal warna brown
+                            ),
                           ),
                           margin: const EdgeInsets.only(bottom: 8),
                           child: Padding(
@@ -478,9 +494,8 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                                   children: [
                                     Expanded(
                                       child: DropdownButtonFormField<int>(
-                                        initialValue: menuValid
-                                            ? item['idProduk']
-                                            : null,
+                                        initialValue:
+                                            menuValid ? item['idProduk'] : null,
                                         hint: const Text('Pilih Produk'),
                                         isExpanded: true,
                                         items: listMenu
@@ -591,7 +606,6 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                         );
                       }),
                       const SizedBox(height: 8),
-                      // Tombol Tambah Baris Layaknya jQuery Clone
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
@@ -657,46 +671,40 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                   return;
                 }
 
-                String tanggalSekarang = DateTime.now().toString().substring(
-                  0,
-                  16,
-                );
+                String tanggalSekarang =
+                    DateTime.now().toString().substring(0, 16);
                 String detailJson = jsonEncode(menuItems);
                 int totalQty = menuItems.fold(
                   0,
                   (sum, item) => sum + (item['qty'] as int),
                 );
 
+                PesananEntity pesananData = PesananEntity(
+                  id: isEdit ? pesanan.id : 0,
+                  namaPelanggan: namaController.text,
+                  idProduk: menuItems.first['idProduk'],
+                  jumlah: totalQty,
+                  totalHarga: grandTotal,
+                  statusPesanan: selectedStatus,
+                  tanggalPesanan: isEdit ? pesanan.tanggalPesanan : tanggalSekarang,
+                  detailPesanan: detailJson,
+                );
+
+                bool success;
                 if (isEdit) {
-                  await DatabaseHelper.getInstance().updatePesanan(
-                    PesananEntity(
-                      id: pesanan.id,
-                      namaPelanggan: namaController.text,
-                      idProduk: menuItems
-                          .first['idProduk'], // kompatibilitas ke kolom lama
-                      jumlah: totalQty,
-                      totalHarga: grandTotal,
-                      statusPesanan: selectedStatus,
-                      tanggalPesanan: pesanan.tanggalPesanan,
-                      detailPesanan: detailJson,
-                    ),
-                  );
+                  success = await ApiService.updatePesanan(pesananData);
                 } else {
-                  await DatabaseHelper.getInstance().createPesanan(
-                    PesananEntity(
-                      id: 0,
-                      namaPelanggan: namaController.text,
-                      idProduk: menuItems.first['idProduk'],
-                      jumlah: totalQty,
-                      totalHarga: grandTotal,
-                      statusPesanan: selectedStatus,
-                      tanggalPesanan: tanggalSekarang,
-                      detailPesanan: detailJson,
-                    ),
-                  );
+                  success = await ApiService.createPesanan(pesananData);
                 }
+
                 if (context.mounted) {
                   Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(success ? "Berhasil disimpan" : "Gagal menyimpan data"),
+                      backgroundColor: success ? Colors.green : Colors.red,
+                    ),
+                  );
                 }
                 _refreshData();
               },

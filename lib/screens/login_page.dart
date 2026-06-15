@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/database_helper.dart';
+import '../services/api_service.dart';
 import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -15,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   void _login() async {
     String username = usernameController.text.trim();
@@ -25,9 +26,14 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    var user = await DatabaseHelper.getInstance().loginUser(username, password);
+    setState(() => _isLoading = true);
 
-    if (user != null) {
+    // Login melalui API Spring Boot
+    bool success = await ApiService.login(username, password);
+
+    setState(() => _isLoading = false);
+
+    if (success) {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -35,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     } else {
       _showWarning(
-        "Tidak bisa login! Silakan cek kembali username dan password.",
+        "Tidak bisa login! Silakan cek kembali username dan password.\n\nPastikan Spring Boot server berjalan di port 8083.",
       );
     }
   }
@@ -62,8 +68,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    usernameController.dispose(); // ✅ FIX
-    passwordController.dispose(); // ✅ FIX
+    usernameController.dispose();
+    passwordController.dispose();
     super.dispose();
   }
 
@@ -98,6 +104,14 @@ class _LoginPageState extends State<LoginPage> {
                         color: Colors.brown,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Admin Panel",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.brown[300],
+                      ),
+                    ),
                     const SizedBox(height: 32),
                     TextField(
                       controller: usernameController,
@@ -113,6 +127,7 @@ class _LoginPageState extends State<LoginPage> {
                     TextField(
                       controller: passwordController,
                       obscureText: _obscurePassword,
+                      onSubmitted: (_) => _login(),
                       decoration: InputDecoration(
                         labelText: "Password",
                         prefixIcon: const Icon(Icons.lock),
@@ -144,15 +159,19 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        onPressed: _login,
-                        child: const Text(
-                          "Login",
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        onPressed: _isLoading ? null : _login,
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                "Login",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
                   ],

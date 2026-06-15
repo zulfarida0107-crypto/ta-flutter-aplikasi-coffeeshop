@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import '../data/database_helper.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/menu_produk_entity.dart';
+import '../services/api_service.dart';
 
 class MenuProdukPage extends StatefulWidget {
   const MenuProdukPage({super.key});
@@ -11,6 +14,7 @@ class MenuProdukPage extends StatefulWidget {
 
 class _MenuProdukPageState extends State<MenuProdukPage> {
   List<MenuProdukEntity> listMenu = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -19,9 +23,11 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
   }
 
   void _refreshData() async {
-    var data = await DatabaseHelper.getInstance().getAllMenuProduk();
+    setState(() => isLoading = true);
+    var data = await ApiService.getAllMenuProduk();
     setState(() {
       listMenu = data;
+      isLoading = false;
     });
   }
 
@@ -35,68 +41,76 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
         ),
         backgroundColor: Colors.brown[800],
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _refreshData,
+          ),
+        ],
       ),
-      body: listMenu.isEmpty
-          ? const Center(child: Text("Belum ada menu. Klik + untuk tambah!"))
-          : ListView.builder(
-              itemCount: listMenu.length,
-              itemBuilder: (context, index) {
-                var menu = listMenu[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  elevation: 2,
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.brown[100],
-                      child: const Icon(Icons.coffee, color: Colors.brown),
-                    ),
-                    title: Text(
-                      "ID: ${menu.id} - ${menu.namaProduk}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Row(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.brown))
+          : listMenu.isEmpty
+              ? const Center(child: Text("Belum ada menu. Klik + untuk tambah!"))
+              : ListView.builder(
+                  itemCount: listMenu.length,
+                  itemBuilder: (context, index) {
+                    var menu = listMenu[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      elevation: 2,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.brown[100],
+                          child: const Icon(Icons.coffee, color: Colors.brown),
+                        ),
+                        title: Text(
+                          "ID: ${menu.id} - ${menu.namaProduk}",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildKategoriBadge(menu.kategori),
-                            const SizedBox(width: 8),
-                            Text("Rp ${menu.harga.toInt()}"),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                _buildKategoriBadge(menu.kategori),
+                                const SizedBox(width: 8),
+                                Text("Rp ${menu.harga.toInt()}"),
+                              ],
+                            ),
+                            if (menu.deskripsi != null &&
+                                menu.deskripsi!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                menu.deskripsi!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ],
                         ),
-                        if (menu.deskripsi != null &&
-                            menu.deskripsi!.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            menu.deskripsi!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                    onTap: () => _showDetailDialog(menu),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _showFormDialog(menu: menu),
+                        onTap: () => _showDetailDialog(menu),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _showFormDialog(menu: menu),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDelete(menu),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _confirmDelete(menu),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+                      ),
+                    );
+                  },
+                ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.brown,
         onPressed: () => _showFormDialog(),
@@ -123,7 +137,7 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await DatabaseHelper.getInstance().deleteMenuProduk(menu.id);
+              await ApiService.deleteMenuProduk(menu.id);
               if (mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -155,6 +169,14 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.brown[100],
+                child: const Icon(Icons.coffee, size: 40, color: Colors.brown),
+              ),
+            ),
+            const SizedBox(height: 12),
             Text(
               "ID: ${menu.id}",
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -231,9 +253,6 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
   void _showFormDialog({MenuProdukEntity? menu}) {
     bool isEdit = menu != null;
 
-    TextEditingController idController = TextEditingController(
-      text: isEdit ? menu.id.toString() : "",
-    );
     TextEditingController namaController = TextEditingController(
       text: isEdit ? menu.namaProduk : "",
     );
@@ -243,8 +262,10 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
     TextEditingController deskripsiController = TextEditingController(
       text: isEdit ? (menu.deskripsi ?? "") : "",
     );
+    TextEditingController gambarController = TextEditingController(
+      text: isEdit ? (menu.gambar ?? "") : "",
+    );
 
-    // Perbaikan logika penentuan kategori awal
     List<String> kategoriList = ['Kopi', 'Non-Kopi', 'Pastry', 'Kue Custom'];
     String selectedKategori = (isEdit && kategoriList.contains(menu.kategori))
         ? menu.kategori
@@ -258,13 +279,6 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: idController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "ID Produk"),
-                enabled:
-                    !isEdit, // ID biasanya tidak boleh diedit jika Primary Key
-              ),
               TextField(
                 controller: namaController,
                 decoration: const InputDecoration(labelText: "Nama Produk"),
@@ -281,16 +295,51 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
                 ),
                 keyboardType: TextInputType.number,
               ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: gambarController,
+                      decoration: const InputDecoration(
+                        labelText: "Upload / Link URL Gambar",
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.paste, color: Colors.blue),
+                    tooltip: "Paste Link",
+                    onPressed: () async {
+                      ClipboardData? data = await Clipboard.getData(
+                        Clipboard.kTextPlain,
+                      );
+                      if (data != null && data.text != null) {
+                        gambarController.text = data.text!;
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.upload_file, color: Colors.brown),
+                    tooltip: "Upload Gambar",
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? image = await picker.pickImage(
+                        source: ImageSource.gallery,
+                      );
+                      if (image != null) {
+                        gambarController.text = image.path;
+                      }
+                    },
+                  ),
+                ],
+              ),
               const SizedBox(height: 15),
               StatefulBuilder(
                 builder: (context, setStateSB) {
                   return DropdownButtonFormField<String>(
-                    initialValue:
-                        selectedKategori, // Perbaikan: value bukan Value
+                    initialValue: selectedKategori,
                     decoration: const InputDecoration(
                       labelText: "Kategori",
-                      border:
-                          OutlineInputBorder(), // Perbaikan: border di dalam decoration
+                      border: OutlineInputBorder(),
                     ),
                     items: kategoriList.map((String value) {
                       return DropdownMenuItem<String>(
@@ -317,25 +366,32 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
             onPressed: () async {
-              int parsedId = int.tryParse(idController.text) ?? 0;
               double parsedHarga = double.tryParse(hargaController.text) ?? 0.0;
 
               MenuProdukEntity data = MenuProdukEntity(
-                id: parsedId,
+                id: isEdit ? menu.id : 0,
                 namaProduk: namaController.text,
                 harga: parsedHarga,
                 deskripsi: deskripsiController.text,
                 kategori: selectedKategori,
+                gambar: gambarController.text,
               );
 
+              bool success;
               if (isEdit) {
-                await DatabaseHelper.getInstance().updateMenuProduk(data);
+                success = await ApiService.updateMenuProduk(data);
               } else {
-                await DatabaseHelper.getInstance().createMenuProduk(data);
+                success = await ApiService.createMenuProduk(data);
               }
 
               if (mounted) {
                 Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? "Berhasil disimpan" : "Gagal menyimpan data"),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
                 _refreshData();
               }
             },

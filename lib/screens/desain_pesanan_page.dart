@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // ✅ SUDAH ADA
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../data/database_helper.dart';
 import '../models/desain_pesanan_entity.dart';
+import '../services/api_service.dart';
 
 class DesainPesananPage extends StatefulWidget {
   const DesainPesananPage({super.key});
@@ -16,21 +16,20 @@ class DesainPesananPage extends StatefulWidget {
 
 class _DesainPesananPageState extends State<DesainPesananPage> {
   List<DesainPesananEntity> listDesain = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _refreshData();
-    _saveSession(); // ✅ TAMBAHAN
+    _saveSession();
   }
 
-  // ✅ TAMBAHAN: simpan session
   void _saveSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_in_desain_page', true);
   }
 
-  // ✅ TAMBAHAN: hapus session saat keluar
   @override
   void dispose() {
     _clearSession();
@@ -42,14 +41,12 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
     await prefs.remove('is_in_desain_page');
   }
 
-  // ===========================
-  // KODE ASLI (TIDAK DIUBAH)
-  // ===========================
-
   void _refreshData() async {
-    var data = await DatabaseHelper.getInstance().getAllDesainPesanan();
+    setState(() => isLoading = true);
+    var data = await ApiService.getAllDesainPesanan();
     setState(() {
       listDesain = data;
+      isLoading = false;
     });
   }
 
@@ -57,7 +54,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 85, // Tetap kasih ruang biar nggak nempel bawah
+        toolbarHeight: 85,
         backgroundColor: const Color(0xFF674D43),
         elevation: 0,
         leading: IconButton(
@@ -65,8 +62,8 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // Ratakan kiri semua
-          mainAxisSize: MainAxisSize.min, // Biar kotaknya nggak serakah tempat
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Daftar Desain Pesanan',
@@ -79,103 +76,117 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
           ],
         ),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _refreshData,
+          ),
+        ],
       ),
-      body: listDesain.isEmpty
-          ? const Center(
-              child: Text("Belum ada desain pesanan. Klik + untuk tambah!"),
-            )
-          : ListView.builder(
-              itemCount: listDesain.length,
-              itemBuilder: (context, index) {
-                var desain = listDesain[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  elevation: 2,
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.brown[100],
-                      child: const Icon(Icons.cake, color: Colors.brown),
-                    ),
-                    title: Text(
-                      "ID: ${desain.id} - ID Pesanan: ${desain.idPesanan}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(desain.keterangan ?? "Tidak ada keterangan"),
-                    onTap: () {
-                      _showDetailDialog(desain);
-                    },
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () {
-                            _showFormDialog(desain: desain);
-                          },
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.brown))
+          : listDesain.isEmpty
+              ? const Center(
+                  child: Text("Belum ada desain pesanan. Klik + untuk tambah!"),
+                )
+              : ListView.builder(
+                  itemCount: listDesain.length,
+                  itemBuilder: (context, index) {
+                    var desain = listDesain[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      elevation: 2,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.brown[100],
+                          child: const Icon(Icons.cake, color: Colors.brown),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text(
-                                  "Konfirmasi Hapus",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                content: const Text(
-                                  "Apakah anda yakin menghapus data ini?",
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text(
-                                      "tidak",
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                    ),
-                                    onPressed: () async {
-                                      await DatabaseHelper.getInstance()
-                                          .deleteDesainPesanan(desain.id);
-                                      if (context.mounted) {
-                                        Navigator.pop(context);
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              "Data berhasil dihapus permanen",
-                                            ),
-                                            backgroundColor: Colors.brown,
-                                          ),
-                                        );
-                                      }
-                                      _refreshData();
-                                    },
-                                    child: const Text(
-                                      "ya",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                        title: Text(
+                          "ID: ${desain.id} - ID Pesanan: ${desain.idPesanan}",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(desain.keterangan ?? "Tidak ada keterangan"),
+                            const SizedBox(height: 4),
+                            _buildStatusBadge(desain.statusPesanan),
+                          ],
+                        ),
+                        onTap: () {
+                          _showDetailDialog(desain);
+                        },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () {
+                                _showFormDialog(desain: desain);
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text(
+                                      "Konfirmasi Hapus",
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    content: const Text(
+                                      "Apakah anda yakin menghapus data ini?",
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text(
+                                          "tidak",
+                                          style: TextStyle(color: Colors.grey),
+                                        ),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                        ),
+                                        onPressed: () async {
+                                          await ApiService.deleteDesainPesanan(desain.id);
+                                          if (context.mounted) {
+                                            Navigator.pop(context);
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "Data berhasil dihapus permanen",
+                                                ),
+                                                backgroundColor: Colors.brown,
+                                              ),
+                                            );
+                                          }
+                                          _refreshData();
+                                        },
+                                        child: const Text(
+                                          "ya",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.brown,
         onPressed: () {
@@ -204,13 +215,19 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text("Status: ", style: TextStyle(fontSize: 16)),
+                _buildStatusBadge(desain.statusPesanan),
+              ],
+            ),
+            const SizedBox(height: 8),
             const Text("Link/URL Desain:", style: TextStyle(fontSize: 16)),
             if (desain.fileDesainUrl != null &&
                 desain.fileDesainUrl!.isNotEmpty)
               Builder(
                 builder: (context) {
                   String url = desain.fileDesainUrl!;
-                  // Deteksi apakah ini path file lokal (dari storage HP) atau link web
                   bool isFile =
                       url.startsWith('/') ||
                       url.startsWith('file://') ||
@@ -291,9 +308,6 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
   void _showFormDialog({DesainPesananEntity? desain}) {
     bool isEdit = desain != null;
 
-    TextEditingController idController = TextEditingController(
-      text: isEdit ? desain.id.toString() : "",
-    );
     TextEditingController idPesananController = TextEditingController(
       text: isEdit ? desain.idPesanan.toString() : "",
     );
@@ -303,6 +317,13 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
     TextEditingController keteranganController = TextEditingController(
       text: isEdit ? desain.keterangan : "",
     );
+
+    String selectedStatus = "Baru";
+    if (isEdit) {
+      if (desain.statusPesanan.toLowerCase() == 'baru') selectedStatus = 'Baru';
+      else if (desain.statusPesanan.toLowerCase() == 'proses') selectedStatus = 'Proses';
+      else if (desain.statusPesanan.toLowerCase() == 'selesai') selectedStatus = 'Selesai';
+    }
 
     showDialog(
       context: context,
@@ -314,11 +335,6 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: idController,
-                decoration: const InputDecoration(labelText: "ID Desain"),
-                keyboardType: TextInputType.number,
-              ),
               TextField(
                 controller: idPesananController,
                 decoration: const InputDecoration(labelText: "ID Pesanan"),
@@ -368,6 +384,28 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
                 ),
                 maxLines: 2,
               ),
+              const SizedBox(height: 15),
+              StatefulBuilder(
+                builder: (context, setStateSB) {
+                  return DropdownButtonFormField<String>(
+                    value: selectedStatus,
+                    decoration: const InputDecoration(
+                      labelText: "Status Pesanan",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Baru', child: Text('Baru')),
+                      DropdownMenuItem(value: 'Proses', child: Text('Proses')),
+                      DropdownMenuItem(value: 'Selesai', child: Text('Selesai')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setStateSB(() => selectedStatus = value);
+                      }
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -379,41 +417,68 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
             onPressed: () async {
-              String tanggalSekarang = DateTime.now().toString().substring(
-                0,
-                16,
+              String tanggalSekarang =
+                  DateTime.now().toString().substring(0, 16);
+
+              DesainPesananEntity data = DesainPesananEntity(
+                id: isEdit ? desain.id : 0,
+                idPesanan: int.tryParse(idPesananController.text) ?? 0,
+                fileDesainUrl: urlController.text,
+                keterangan: keteranganController.text,
+                tanggalUpload: isEdit ? desain.tanggalUpload : tanggalSekarang,
+                statusPesanan: selectedStatus,
               );
 
-              int parsedId = int.tryParse(idController.text) ?? 0;
-
+              bool success;
               if (isEdit) {
-                await DatabaseHelper.getInstance().updateDesainPesananWithOldId(
-                  desain.id,
-                  DesainPesananEntity(
-                    id: parsedId,
-                    idPesanan: int.tryParse(idPesananController.text) ?? 0,
-                    fileDesainUrl: urlController.text,
-                    keterangan: keteranganController.text,
-                    tanggalUpload: desain.tanggalUpload,
-                  ),
-                );
+                success = await ApiService.updateDesainPesanan(data);
               } else {
-                await DatabaseHelper.getInstance().createDesainPesanan(
-                  DesainPesananEntity(
-                    id: parsedId,
-                    idPesanan: int.tryParse(idPesananController.text) ?? 0,
-                    fileDesainUrl: urlController.text,
-                    keterangan: keteranganController.text,
-                    tanggalUpload: tanggalSekarang,
+                success = await ApiService.createDesainPesanan(data);
+              }
+
+              Navigator.pop(context);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? "Berhasil disimpan" : "Gagal menyimpan data"),
+                    backgroundColor: success ? Colors.green : Colors.red,
                   ),
                 );
               }
-              Navigator.pop(context);
               _refreshData();
             },
             child: const Text("Simpan", style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color bgColor;
+    if (status.toLowerCase() == 'baru') {
+      bgColor = Colors.blue;
+    } else if (status.toLowerCase() == 'proses') {
+      bgColor = Colors.yellow[700]!;
+    } else if (status.toLowerCase() == 'selesai') {
+      bgColor = Colors.green;
+    } else {
+      bgColor = Colors.grey;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        status,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

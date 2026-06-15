@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import '../models/menu_produk_entity.dart';
 import '../services/api_service.dart';
 
 class MenuScreen extends StatefulWidget {
-  const MenuScreen({Key? key}) : super(key: key);
+  const MenuScreen({super.key});
 
   @override
-  _MenuScreenState createState() => _MenuScreenState();
+  State<MenuScreen> createState() => _MenuScreenState();
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  List<dynamic> _menuList = [];
+  List<MenuProdukEntity> _menuList = [];
   bool _isLoading = true;
 
   @override
@@ -18,9 +19,8 @@ class _MenuScreenState extends State<MenuScreen> {
     _fetchData();
   }
 
-  // Menarik data dari API saat halaman pertama kali dibuka
   Future<void> _fetchData() async {
-    final data = await ApiService.getMenuProduk();
+    final data = await ApiService.getAllMenuProduk();
     setState(() {
       _menuList = data;
       _isLoading = false;
@@ -30,20 +30,38 @@ class _MenuScreenState extends State<MenuScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Katalog Produk")),
+      appBar: AppBar(
+        title: const Text("Katalog Produk"),
+        backgroundColor: Colors.brown[800],
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              setState(() => _isLoading = true);
+              _fetchData();
+            },
+          ),
+        ],
+      ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _menuList.length,
-              itemBuilder: (context, index) {
-                final menu = _menuList[index];
-                return ListTile(
-                  title: Text(menu['namaProduk']), // Sesuai field JSON API
-                  subtitle: Text("Rp. ${menu['harga']}"),
-                  trailing: Text(menu['kategori']),
-                );
-              },
-            ),
+          ? const Center(child: CircularProgressIndicator(color: Colors.brown))
+          : _menuList.isEmpty
+              ? const Center(child: Text("Belum ada produk tersedia."))
+              : ListView.builder(
+                  itemCount: _menuList.length,
+                  itemBuilder: (context, index) {
+                    final menu = _menuList[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.brown[100],
+                        child: const Icon(Icons.coffee, color: Colors.brown),
+                      ),
+                      title: Text(menu.namaProduk),
+                      subtitle: Text("Rp. ${menu.harga.toInt()} • ${menu.kategori}"),
+                    );
+                  },
+                ),
     );
   }
 }

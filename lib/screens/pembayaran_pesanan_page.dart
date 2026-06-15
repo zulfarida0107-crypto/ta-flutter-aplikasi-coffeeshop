@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../data/database_helper.dart';
 import '../models/pesanan_entity.dart';
+import '../services/api_service.dart';
 
 class PembayaranPesananPage extends StatefulWidget {
   const PembayaranPesananPage({super.key});
@@ -20,11 +20,9 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
     _fetchData();
   }
 
-
-
   void _fetchData() async {
     setState(() => isLoading = true);
-    var data = await DatabaseHelper.getInstance().getAllPesanan();
+    var data = await ApiService.getAllPesanan();
     setState(() {
       listPembayaran = data
           .where(
@@ -87,10 +85,13 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
               const SizedBox(height: 8),
 
               ...items.map((item) {
+                final name = item['namaProduk'] ?? item['name'] ?? '-';
+                final qty = item['qty'] ?? item['quantity'] ?? 1;
+                final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 4.0),
                   child: Text(
-                    "- ${item['namaProduk']} x${item['qty']} (Rp ${formatRupiah(item['subtotal'])})",
+                    "- $name x$qty (Rp ${formatRupiah(subtotal)})",
                     style: const TextStyle(fontSize: 14),
                   ),
                 );
@@ -98,7 +99,6 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
 
               const Divider(height: 30, thickness: 1),
 
-              // ✅ STATUS CHIP (SUDAH DIUBAH)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -220,10 +220,13 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                 ),
                 const SizedBox(height: 8),
                 ...items.map((item) {
+                  final name = item['namaProduk'] ?? item['name'] ?? '-';
+                  final qty = item['qty'] ?? item['quantity'] ?? 1;
+                  final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 4.0),
                     child: Text(
-                      "- ${item['namaProduk']} x${item['qty']} (Rp ${formatRupiah(item['subtotal'])})",
+                      "- $name x$qty (Rp ${formatRupiah(subtotal)})",
                       style: const TextStyle(fontSize: 14),
                     ),
                   );
@@ -311,9 +314,7 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                           detailPesanan: pesanan.detailPesanan,
                         );
 
-                        await DatabaseHelper.getInstance().updatePesanan(
-                          pesananBaru,
-                        );
+                        await ApiService.updatePesanan(pesananBaru);
                         if (context.mounted) Navigator.pop(context);
                         _fetchData();
                       },
@@ -335,16 +336,13 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
     );
   }
 
-  // --- HANYA SATU FUNGSI _buildStatusTag DI SINI ---
   Widget _buildStatusTag(String status) {
-    // Memberikan nilai awal (default) agar compiler tenang
     Color bgColor = Colors.orange;
     String cleanStatus = status.toLowerCase();
 
     if (cleanStatus == 'selesai') {
       bgColor = Colors.green;
     } else {
-      // Karena hanya ada dua, maka selain 'selesai' otomatis 'proses' (Oranye)
       bgColor = Colors.orange;
     }
 
@@ -391,7 +389,10 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
         backgroundColor: Colors.brown[700],
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          IconButton(onPressed: _fetchData, icon: const Icon(Icons.refresh)),
+          IconButton(
+            onPressed: _fetchData,
+            icon: const Icon(Icons.refresh, color: Colors.white),
+          ),
         ],
       ),
       body: isLoading
@@ -449,7 +450,6 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
   }
 
   void _showPaymentDetail(PesananEntity pesanan) {
-    // Implementasi detail sama dengan dialog edit namun tanpa dropdown
     _showDetailOnlyDialog(pesanan);
   }
 
