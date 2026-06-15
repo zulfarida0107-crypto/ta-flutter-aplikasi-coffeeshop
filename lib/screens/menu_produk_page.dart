@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/menu_produk_entity.dart';
+import '../models/desain_pesanan_entity.dart';
 import '../services/api_service.dart';
 
 class MenuProdukPage extends StatefulWidget {
@@ -26,7 +27,7 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
     setState(() => isLoading = true);
     var data = await ApiService.getAllMenuProduk();
     setState(() {
-      listMenu = data;
+      listMenu = data.where((m) => m.kategori.toLowerCase() != 'kue custom').toList();
       isLoading = false;
     });
   }
@@ -75,11 +76,17 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 4),
-                            Row(
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 _buildKategoriBadge(menu.kategori),
-                                const SizedBox(width: 8),
-                                Text("Rp ${menu.harga.toInt()}"),
+                                _buildBagianBadge(menu.bagian),
+                                Text(
+                                  "Rp ${menu.harga.toInt()}",
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ],
                             ),
                             if (menu.deskripsi != null &&
@@ -205,6 +212,13 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
                 _buildKategoriBadge(menu.kategori),
               ],
             ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text("Bagian Tampilan: ", style: TextStyle(fontSize: 16)),
+                _buildBagianBadge(menu.bagian),
+              ],
+            ),
           ],
         ),
         actions: [
@@ -213,6 +227,25 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
             child: const Text("Tutup", style: TextStyle(color: Colors.brown)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBagianBadge(String bagian) {
+    Color bgColor = Colors.brown[500]!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        bagian,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -271,72 +304,99 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
         ? menu.kategori
         : 'Kopi';
 
+    List<String> bagianList = ['Menu Kami', 'Produk Unggulan'];
+    String dbBagian = isEdit ? (menu.bagian) : 'Menu Kami';
+    if (dbBagian == 'Produk Unggulan Kami') {
+      dbBagian = 'Produk Unggulan';
+    }
+    String selectedBagian = (isEdit && bagianList.contains(dbBagian))
+        ? dbBagian
+        : 'Menu Kami';
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(isEdit ? "Edit Menu Produk" : "Tambah Menu Baru"),
         content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: namaController,
-                decoration: const InputDecoration(labelText: "Nama Produk"),
-              ),
-              TextField(
-                controller: deskripsiController,
-                decoration: const InputDecoration(labelText: "Deskripsi"),
-                maxLines: 2,
-              ),
-              TextField(
-                controller: hargaController,
-                decoration: const InputDecoration(
-                  labelText: "Harga (Contoh: 15000)",
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              Row(
+          child: StatefulBuilder(
+            builder: (dialogContext, setStateSB) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: gambarController,
-                      decoration: const InputDecoration(
-                        labelText: "Upload / Link URL Gambar",
+                  TextField(
+                    controller: namaController,
+                    decoration: const InputDecoration(labelText: "Nama Produk"),
+                  ),
+                  TextField(
+                    controller: deskripsiController,
+                    decoration: InputDecoration(
+                      labelText: "Deskripsi",
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.paste, size: 20, color: Colors.blue),
+                        tooltip: "Tempel Deskripsi",
+                        onPressed: () async {
+                          ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+                          if (data != null && data.text != null) {
+                            setStateSB(() {
+                              deskripsiController.text = data.text!;
+                            });
+                          }
+                        },
                       ),
                     ),
+                    maxLines: 2,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.paste, color: Colors.blue),
-                    tooltip: "Paste Link",
-                    onPressed: () async {
-                      ClipboardData? data = await Clipboard.getData(
-                        Clipboard.kTextPlain,
-                      );
-                      if (data != null && data.text != null) {
-                        gambarController.text = data.text!;
-                      }
-                    },
+                  TextField(
+                    controller: hargaController,
+                    decoration: const InputDecoration(
+                      labelText: "Harga (Contoh: 15000)",
+                    ),
+                    keyboardType: TextInputType.number,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.upload_file, color: Colors.brown),
-                    tooltip: "Upload Gambar",
-                    onPressed: () async {
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? image = await picker.pickImage(
-                        source: ImageSource.gallery,
-                      );
-                      if (image != null) {
-                        gambarController.text = image.path;
-                      }
-                    },
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: gambarController,
+                          decoration: const InputDecoration(
+                            labelText: "Upload / Link URL Gambar",
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.paste, color: Colors.blue),
+                        tooltip: "Paste Link",
+                        onPressed: () async {
+                          ClipboardData? data = await Clipboard.getData(
+                            Clipboard.kTextPlain,
+                          );
+                          if (data != null && data.text != null) {
+                            setStateSB(() {
+                              gambarController.text = data.text!;
+                            });
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.upload_file, color: Colors.brown),
+                        tooltip: "Upload Gambar",
+                        onPressed: () async {
+                          final ImagePicker picker = ImagePicker();
+                          final XFile? image = await picker.pickImage(
+                            source: ImageSource.gallery,
+                          );
+                          if (image != null) {
+                            setStateSB(() {
+                              gambarController.text = image.path;
+                            });
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 15),
-              StatefulBuilder(
-                builder: (context, setStateSB) {
-                  return DropdownButtonFormField<String>(
-                    initialValue: selectedKategori,
+                  const SizedBox(height: 15),
+                  DropdownButtonFormField<String>(
+                    value: selectedKategori,
                     decoration: const InputDecoration(
                       labelText: "Kategori",
                       border: OutlineInputBorder(),
@@ -349,13 +409,55 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
                     }).toList(),
                     onChanged: (value) {
                       if (value != null) {
-                        setStateSB(() => selectedKategori = value);
+                        setStateSB(() {
+                          selectedKategori = value;
+                          if (selectedKategori == 'Kue Custom') {
+                            selectedBagian = 'Menu Kami';
+                          }
+                        });
                       }
                     },
-                  );
-                },
-              ),
-            ],
+                  ),
+                  const SizedBox(height: 15),
+                  if (selectedKategori != 'Kue Custom') ...[
+                    DropdownButtonFormField<String>(
+                      value: selectedBagian,
+                      decoration: const InputDecoration(
+                        labelText: "Bagian Tampilan",
+                        border: OutlineInputBorder(),
+                      ),
+                      items: bagianList.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setStateSB(() {
+                            selectedBagian = value;
+                          });
+                        }
+                      },
+                    ),
+                  ] else ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Text(
+                        "Bagian Tampilan: Tidak Aktif (Kue Custom)",
+                        style: TextStyle(color: Colors.grey[600], fontSize: 15),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
         ),
         actions: [
@@ -375,6 +477,7 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
                 deskripsi: deskripsiController.text,
                 kategori: selectedKategori,
                 gambar: gambarController.text,
+                bagian: selectedBagian,
               );
 
               bool success;
@@ -382,6 +485,31 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
                 success = await ApiService.updateMenuProduk(data);
               } else {
                 success = await ApiService.createMenuProduk(data);
+              }
+
+              bool shouldCreateDesain = false;
+              if (success) {
+                if (isEdit) {
+                  if (menu.kategori != 'Kue Custom' && selectedKategori == 'Kue Custom') {
+                    shouldCreateDesain = true;
+                  }
+                } else {
+                  if (selectedKategori == 'Kue Custom') {
+                    shouldCreateDesain = true;
+                  }
+                }
+              }
+
+              if (shouldCreateDesain) {
+                DesainPesananEntity desain = DesainPesananEntity(
+                  id: 0,
+                  idPesanan: 0,
+                  fileDesainUrl: data.gambar ?? '1.jpg',
+                  keterangan: "Kategori: Kue Custom\nNama Produk: ${data.namaProduk}\nDeskripsi: ${data.deskripsi ?? ''}",
+                  tanggalUpload: DateTime.now().toIso8601String(),
+                  statusPesanan: "Baru",
+                );
+                await ApiService.createDesainPesanan(desain);
               }
 
               if (mounted) {

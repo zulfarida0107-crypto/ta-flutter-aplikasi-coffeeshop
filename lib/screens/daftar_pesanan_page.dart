@@ -215,16 +215,16 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
         status,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -243,9 +243,20 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFBEBE6), // Peach/pink background
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(28, 28, 28, 0),
+        contentPadding: const EdgeInsets.fromLTRB(28, 20, 28, 10),
+        actionsPadding: const EdgeInsets.fromLTRB(28, 0, 28, 20),
         title: const Text(
           "Detail Pesanan",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
         ),
         content: SizedBox(
           width: double.maxFinite,
@@ -257,20 +268,21 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                 Text(
                   "Pelanggan: ${pesanan.namaPelanggan}",
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 if (items.isEmpty) ...[
-                  // Compatibility Legacy
                   Text(
                     "ID Produk: ${pesanan.idProduk}",
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 16, color: Colors.black87),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     "Jumlah Beli: ${pesanan.jumlah} item",
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 16, color: Colors.black87),
                   ),
                 ] else ...[
                   const Text(
@@ -278,42 +290,49 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                     style: TextStyle(
                       fontSize: 16,
                       decoration: TextDecoration.underline,
+                      color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   ...items.map((item) {
-                    // Support both CI4 format (qty/price) and Flutter format (qty/subtotal)
                     final name = item['namaProduk'] ?? item['name'] ?? '-';
                     final qty = item['qty'] ?? item['quantity'] ?? 1;
                     final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 4.0),
+                      padding: const EdgeInsets.only(bottom: 6.0),
                       child: Text(
                         "- $name x$qty (Rp ${formatRupiah(subtotal)})",
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(fontSize: 16, color: Colors.black87),
                       ),
                     );
                   }),
                 ],
-                const Divider(),
+                const SizedBox(height: 8),
+                const Divider(color: Colors.black26),
+                const SizedBox(height: 8),
                 Text(
                   "Total Harga: Rp ${formatRupiah(pesanan.totalHarga)}",
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 Row(
                   children: [
-                    const Text("Status: ", style: TextStyle(fontSize: 16)),
+                    const Text(
+                      "Status: ",
+                      style: TextStyle(fontSize: 16, color: Colors.black87),
+                    ),
+                    const SizedBox(width: 8),
                     _buildStatusBadge(pesanan.statusPesanan),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 Text(
                   "Waktu: ${pesanan.tanggalPesanan ?? '-'}",
-                  style: const TextStyle(fontSize: 14, color: Colors.black),
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                 ),
               ],
             ),
@@ -322,7 +341,14 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Tutup", style: TextStyle(color: Colors.brown)),
+            child: Text(
+              "Tutup",
+              style: TextStyle(
+                color: Colors.brown[800],
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -333,7 +359,9 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
   void _showFormDialog({PesananEntity? pesanan}) async {
     bool isEdit = pesanan != null;
 
-    List<MenuProdukEntity> listMenu = await ApiService.getAllMenuProduk();
+    List<MenuProdukEntity> listMenu = (await ApiService.getAllMenuProduk())
+        .where((m) => m.kategori.toLowerCase() != 'kue custom')
+        .toList();
     if (listMenu.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -347,6 +375,13 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
       return;
     }
 
+    List<MenuProdukEntity> listMenuKami = listMenu
+        .where((m) => m.bagian == 'Menu Kami')
+        .toList();
+    List<MenuProdukEntity> listProdukUnggulan = listMenu
+        .where((m) => m.bagian == 'Produk Unggulan')
+        .toList();
+
     TextEditingController namaController = TextEditingController(
       text: isEdit ? pesanan.namaPelanggan : "",
     );
@@ -357,8 +392,9 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
       else if (pesanan.statusPesanan.toLowerCase() == 'selesai') selectedStatus = 'Selesai';
     }
 
-    // items merepresentasikan baris pesanan dinamis
+    // items merepresentasikan baris pesanan dinamis terpisah
     List<Map<String, dynamic>> menuItems = [];
+    List<Map<String, dynamic>> produkItems = [];
     double grandTotal = 0.0;
 
     if (isEdit) {
@@ -373,42 +409,68 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
             double harga = ((item['harga'] ?? item['price'] ?? 0) as num).toDouble();
             int qty = item['qty'] ?? item['quantity'] ?? 1;
 
-            menuItems.add({
+            var currentItem = {
               "idProduk": idProd,
               "namaProduk": item['namaProduk'] ?? item['name'] ?? '',
               "harga": harga,
               "qty": qty,
               "subtotal": ((item['subtotal'] ?? (harga * qty)) as num).toDouble(),
-            });
+            };
+
+            bool isProductUnggulan = false;
+            try {
+              var prod = listMenu.firstWhere((m) => m.id == idProd);
+              if (prod.bagian == 'Produk Unggulan') {
+                isProductUnggulan = true;
+              }
+            } catch (_) {}
+
+            if (isProductUnggulan) {
+              produkItems.add(currentItem);
+            } else {
+              menuItems.add(currentItem);
+            }
           }
           grandTotal = pesanan.totalHarga;
         } catch (e) {}
       }
 
       // Fallback jika kosong (data lama)
-      if (menuItems.isEmpty) {
-        menuItems.add({
+      if (menuItems.isEmpty && produkItems.isEmpty) {
+        bool isProductUnggulan = false;
+        try {
+          var prod = listMenu.firstWhere((m) => m.id == pesanan.idProduk);
+          if (prod.bagian == 'Produk Unggulan') {
+            isProductUnggulan = true;
+          }
+        } catch (_) {}
+
+        var fallbackItem = {
           "idProduk": pesanan.idProduk,
           "namaProduk": "ID Produk: ${pesanan.idProduk}",
           "harga": pesanan.jumlah > 0 ? pesanan.totalHarga / pesanan.jumlah : 0.0,
           "qty": pesanan.jumlah,
           "subtotal": pesanan.totalHarga,
-        });
+        };
+
+        if (isProductUnggulan) {
+          produkItems.add(fallbackItem);
+        } else {
+          menuItems.add(fallbackItem);
+        }
         grandTotal = pesanan.totalHarga;
       }
-    } else {
-      menuItems.add({
-        "idProduk": null,
-        "namaProduk": "",
-        "harga": 0.0,
-        "qty": 1,
-        "subtotal": 0.0,
-      });
     }
 
     void hitungTotal(StateSetter setStateSB) {
       double total = 0.0;
       for (var item in menuItems) {
+        if (item['idProduk'] != null) {
+          item['subtotal'] = item['harga'] * item['qty'];
+          total += item['subtotal'];
+        }
+      }
+      for (var item in produkItems) {
         if (item['idProduk'] != null) {
           item['subtotal'] = item['harga'] * item['qty'];
           total += item['subtotal'];
@@ -463,148 +525,144 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        "Daftar Item Pesanan (Keranjang):",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        "Daftar Item Menu",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       const SizedBox(height: 8),
-                      // Iterasi Baris Dinamis
-                      ...menuItems.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        var item = entry.value;
-                        bool menuValid = listMenu.any(
-                          (m) => m.id == item['idProduk'],
-                        );
-
-                        return Card(
-                          color: Colors.transparent,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: const BorderSide(
-                              color: Colors.brown,
-                              width: 2,
-                            ),
+                      if (menuItems.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            "Belum ada item menu terpilih.",
+                            style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
                           ),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: DropdownButtonFormField<int>(
-                                        initialValue:
-                                            menuValid ? item['idProduk'] : null,
-                                        hint: const Text('Pilih Produk'),
-                                        isExpanded: true,
-                                        items: listMenu
-                                            .map(
-                                              (m) => DropdownMenuItem(
-                                                value: m.id,
-                                                child: Text(m.namaProduk),
-                                              ),
-                                            )
-                                            .toList(),
-                                        onChanged: (val) {
-                                          if (val != null) {
-                                            var sel = listMenu.firstWhere(
-                                              (m) => m.id == val,
-                                            );
-                                            setStateSB(() {
-                                              item['idProduk'] = val;
-                                              item['namaProduk'] =
-                                                  sel.namaProduk;
-                                              item['harga'] = sel.harga;
-                                              hitungTotal(setStateSB);
-                                            });
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
-                                      ),
-                                      onPressed: () {
-                                        if (menuItems.length > 1) {
-                                          setStateSB(() {
-                                            menuItems.removeAt(index);
-                                            hitungTotal(setStateSB);
-                                          });
-                                        } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                "Pesanan wajib memiliki minimal 1 produk.",
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.remove_circle_outline,
-                                          ),
-                                          onPressed: () {
-                                            if (item['qty'] > 1) {
+                        )
+                      else
+                        ...menuItems.asMap().entries.map((entry) {
+                          int index = entry.key;
+                          var item = entry.value;
+                          bool menuValid = listMenuKami.any(
+                            (m) => m.id == item['idProduk'],
+                          );
+
+                          return Card(
+                            color: Colors.transparent,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: const BorderSide(
+                                color: Colors.brown,
+                                width: 2,
+                              ),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: DropdownButtonFormField<int>(
+                                          initialValue:
+                                              menuValid ? item['idProduk'] : null,
+                                          hint: const Text('Pilih Menu'),
+                                          isExpanded: true,
+                                          items: listMenuKami
+                                              .map(
+                                                (m) => DropdownMenuItem(
+                                                  value: m.id,
+                                                  child: Text(m.namaProduk),
+                                                ),
+                                              )
+                                              .toList(),
+                                          onChanged: (val) {
+                                            if (val != null) {
+                                              var sel = listMenuKami.firstWhere(
+                                                (m) => m.id == val,
+                                              );
                                               setStateSB(() {
-                                                item['qty']--;
+                                                item['idProduk'] = val;
+                                                item['namaProduk'] =
+                                                    sel.namaProduk;
+                                                item['harga'] = sel.harga;
                                                 hitungTotal(setStateSB);
                                               });
                                             }
                                           },
                                         ),
-                                        Text(
-                                          "${item['qty']}",
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () {
+                                          setStateSB(() {
+                                            menuItems.removeAt(index);
+                                            hitungTotal(setStateSB);
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.remove_circle_outline,
+                                            ),
+                                            onPressed: () {
+                                              if (item['qty'] > 1) {
+                                                setStateSB(() {
+                                                  item['qty']--;
+                                                  hitungTotal(setStateSB);
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          Text(
+                                            "${item['qty']}",
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.add_circle_outline,
+                                            ),
+                                            onPressed: () {
+                                              setStateSB(() {
+                                                item['qty']++;
+                                                hitungTotal(setStateSB);
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          "Rp ${formatRupiah(item['subtotal'])}",
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+                                            color: Colors.brown,
                                           ),
+                                          textAlign: TextAlign.right,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.add_circle_outline,
-                                          ),
-                                          onPressed: () {
-                                            setStateSB(() {
-                                              item['qty']++;
-                                              hitungTotal(setStateSB);
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        "Rp ${formatRupiah(item['subtotal'])}",
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.brown,
-                                        ),
-                                        textAlign: TextAlign.right,
-                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        }),
                       const SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
@@ -631,7 +689,173 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
+                      const Text(
+                        "Daftar Item Produk",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      if (produkItems.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            "Belum ada item produk terpilih.",
+                            style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                          ),
+                        )
+                      else
+                        ...produkItems.asMap().entries.map((entry) {
+                          int index = entry.key;
+                          var item = entry.value;
+                          bool prodValid = listProdukUnggulan.any(
+                            (m) => m.id == item['idProduk'],
+                          );
+
+                          return Card(
+                            color: Colors.transparent,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: const BorderSide(
+                                color: Colors.brown,
+                                width: 2,
+                              ),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: DropdownButtonFormField<int>(
+                                          initialValue:
+                                              prodValid ? item['idProduk'] : null,
+                                          hint: const Text('Pilih Produk'),
+                                          isExpanded: true,
+                                          items: listProdukUnggulan
+                                              .map(
+                                                (m) => DropdownMenuItem(
+                                                  value: m.id,
+                                                  child: Text(m.namaProduk),
+                                                ),
+                                              )
+                                              .toList(),
+                                          onChanged: (val) {
+                                            if (val != null) {
+                                              var sel = listProdukUnggulan.firstWhere(
+                                                (m) => m.id == val,
+                                              );
+                                              setStateSB(() {
+                                                item['idProduk'] = val;
+                                                item['namaProduk'] =
+                                                    sel.namaProduk;
+                                                item['harga'] = sel.harga;
+                                                hitungTotal(setStateSB);
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () {
+                                          setStateSB(() {
+                                            produkItems.removeAt(index);
+                                            hitungTotal(setStateSB);
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.remove_circle_outline,
+                                            ),
+                                            onPressed: () {
+                                              if (item['qty'] > 1) {
+                                                setStateSB(() {
+                                                  item['qty']--;
+                                                  hitungTotal(setStateSB);
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          Text(
+                                            "${item['qty']}",
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.add_circle_outline,
+                                            ),
+                                            onPressed: () {
+                                              setStateSB(() {
+                                                item['qty']++;
+                                                hitungTotal(setStateSB);
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          "Rp ${formatRupiah(item['subtotal'])}",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.brown,
+                                          ),
+                                          textAlign: TextAlign.right,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                              color: Colors.brown,
+                              width: 2,
+                            ),
+                            foregroundColor: Colors.brown,
+                          ),
+                          icon: const Icon(Icons.add),
+                          label: const Text("Tambah Baris Produk"),
+                          onPressed: () {
+                            setStateSB(() {
+                              produkItems.add({
+                                "idProduk": null,
+                                "namaProduk": "",
+                                "harga": 0.0,
+                                "qty": 1,
+                                "subtotal": 0.0,
+                              });
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
@@ -657,7 +881,22 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
               onPressed: () async {
-                bool isAllSelected = menuItems.every(
+                List<Map<String, dynamic>> combinedItems = [];
+                combinedItems.addAll(menuItems);
+                combinedItems.addAll(produkItems);
+
+                if (combinedItems.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        "Pesanan wajib memiliki minimal 1 produk.",
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                bool isAllSelected = combinedItems.every(
                   (it) => it['idProduk'] != null,
                 );
                 if (!isAllSelected) {
@@ -673,8 +912,8 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
 
                 String tanggalSekarang =
                     DateTime.now().toString().substring(0, 16);
-                String detailJson = jsonEncode(menuItems);
-                int totalQty = menuItems.fold(
+                String detailJson = jsonEncode(combinedItems);
+                int totalQty = combinedItems.fold(
                   0,
                   (sum, item) => sum + (item['qty'] as int),
                 );
@@ -682,7 +921,7 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                 PesananEntity pesananData = PesananEntity(
                   id: isEdit ? pesanan.id : 0,
                   namaPelanggan: namaController.text,
-                  idProduk: menuItems.first['idProduk'],
+                  idProduk: combinedItems.first['idProduk'],
                   jumlah: totalQty,
                   totalHarga: grandTotal,
                   statusPesanan: selectedStatus,

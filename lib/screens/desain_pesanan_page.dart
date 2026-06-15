@@ -105,13 +105,13 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
                           child: const Icon(Icons.cake, color: Colors.brown),
                         ),
                         title: Text(
-                          "ID: ${desain.id} - ID Pesanan: ${desain.idPesanan}",
+                          "ID Pesanan: ${desain.id}",
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(desain.keterangan ?? "Tidak ada keterangan"),
+                            _buildSubtitleDescription(desain.keterangan),
                             const SizedBox(height: 4),
                             _buildStatusBadge(desain.statusPesanan),
                           ],
@@ -197,6 +197,153 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
     );
   }
 
+  Widget _buildSubtitleDescription(String? keterangan) {
+    if (keterangan == null || keterangan.isEmpty) {
+      return const Text("Tidak ada deskripsi");
+    }
+
+    if (keterangan.startsWith("Template Kue Custom:")) {
+      String rest = keterangan.substring("Template Kue Custom:".length).trim();
+      List<String> parts = [];
+      if (rest.contains(" . ")) {
+        parts = rest.split(" . ");
+      } else if (rest.contains("\n")) {
+        parts = rest.split("\n");
+      }
+
+      if (parts.length >= 2) {
+        String templateName = parts[0].trim();
+        String desc = parts.sublist(1).join(" . ").trim();
+        if (desc.startsWith("Deskripsi:")) {
+          desc = desc.substring("Deskripsi:".length).trim();
+        }
+        return Text(
+          "$templateName - $desc",
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      }
+      return Text(
+        rest,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    } else if (keterangan.contains("Kategori: Kue Custom")) {
+      List<String> lines = keterangan.split("\n");
+      String templateName = "";
+      String desc = "";
+      for (var line in lines) {
+        if (line.startsWith("Nama Produk:")) {
+          templateName = line.substring("Nama Produk:".length).trim();
+        } else if (line.startsWith("Deskripsi:")) {
+          desc = line.substring("Deskripsi:".length).trim();
+        }
+      }
+      if (templateName.isNotEmpty && desc.isNotEmpty) {
+        return Text(
+          "$templateName - $desc",
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      } else if (templateName.isNotEmpty) {
+        return Text(
+          templateName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      }
+    }
+
+    return Text(
+      keterangan,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _buildDescriptionDetails(String? keterangan) {
+    if (keterangan == null || keterangan.isEmpty) {
+      return const Text("Deskripsi: -", style: TextStyle(fontSize: 16));
+    }
+
+    if (keterangan.startsWith("Template Kue Custom:")) {
+      String rest = keterangan.substring("Template Kue Custom:".length).trim();
+      List<String> parts = [];
+      if (rest.contains(" . ")) {
+        parts = rest.split(" . ");
+      } else if (rest.contains("\n")) {
+        parts = rest.split("\n");
+      }
+
+      if (parts.length >= 2) {
+        String templateName = parts[0].trim();
+        String desc = parts.sublist(1).join(" . ").trim();
+        if (desc.startsWith("Deskripsi:")) {
+          desc = desc.substring("Deskripsi:".length).trim();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Template Kue Custom: $templateName",
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Deskripsi: $desc",
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        );
+      } else {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Template Kue Custom: $rest",
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        );
+      }
+    } else if (keterangan.contains("Kategori: Kue Custom")) {
+      List<String> lines = keterangan.split("\n");
+      String templateName = "";
+      String desc = "";
+      for (var line in lines) {
+        if (line.startsWith("Nama Produk:")) {
+          templateName = line.substring("Nama Produk:".length).trim();
+        } else if (line.startsWith("Deskripsi:")) {
+          desc = line.substring("Deskripsi:".length).trim();
+        }
+      }
+
+      if (templateName.isNotEmpty || desc.isNotEmpty) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (templateName.isNotEmpty) ...[
+              Text(
+                "Template Kue Custom: $templateName",
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              "Deskripsi: ${desc.isNotEmpty ? desc : '-'}",
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        );
+      }
+    }
+
+    return Text(
+      "Deskripsi: $keterangan",
+      style: const TextStyle(fontSize: 16),
+    );
+  }
+
   // --- POP-UP UNTUK VIEW DETAIL ---
   void _showDetailDialog(DesainPesananEntity desain) {
     showDialog(
@@ -211,7 +358,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "ID: ${desain.id} -  ID Pesanan Terkait: ${desain.idPesanan}",
+              "ID Pesanan: ${desain.id}",
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
@@ -279,10 +426,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
             else
               const Text("-", style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
-            Text(
-              "Keterangan: ${desain.keterangan ?? '-'}",
-              style: const TextStyle(fontSize: 16),
-            ),
+            _buildDescriptionDetails(desain.keterangan),
             const SizedBox(height: 8),
             Text(
               "Waktu Upload: ${desain.tanggalUpload ?? '-'}",
@@ -380,7 +524,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
               TextField(
                 controller: keteranganController,
                 decoration: const InputDecoration(
-                  labelText: "Keterangan (Misal: Tulisan HBD Budi)",
+                  labelText: "Deskripsi (Misal: Tulisan HBD Budi)",
                 ),
                 maxLines: 2,
               ),

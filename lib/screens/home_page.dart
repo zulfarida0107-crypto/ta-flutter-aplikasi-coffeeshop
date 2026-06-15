@@ -6,7 +6,6 @@ import 'desain_pesanan_page.dart';
 import 'pesan_kontak_page.dart';
 import 'pembayaran_pesanan_page.dart';
 // import 'login_page.dart';
-import 'menu_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -142,18 +141,6 @@ class HomePage extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (context) => const PembayaranPesananPage(),
-              ),
-            ),
-          ),
-          _buildMenuCard(
-            context,
-            'Katalog Produk (API)',
-            Icons.cloud_sync,
-            Colors.brown,
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const MenuScreen(),
               ),
             ),
           ),

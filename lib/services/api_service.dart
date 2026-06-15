@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../models/user_entity.dart';
 import '../models/menu_produk_entity.dart';
@@ -7,7 +9,15 @@ import '../models/desain_pesanan_entity.dart';
 import '../models/pesan_kontak_entity.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8083/api';
+  static String get baseUrl {
+    if (kIsWeb) {
+      return 'http://127.0.0.1:8083/api';
+    } else if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8083/api';
+    } else {
+      return 'http://127.0.0.1:8083/api';
+    }
+  }
   static String? token;
 
   static Map<String, String> get _headers => {
@@ -138,6 +148,7 @@ class ApiService {
                     deskripsi: e['deskripsi'],
                     kategori: e['kategori'] ?? '',
                     gambar: e['gambar'],
+                    bagian: e['bagian'] ?? 'Menu Kami',
                   ))
               .toList();
         }
@@ -160,6 +171,7 @@ class ApiService {
           'deskripsi': menu.deskripsi ?? '',
           'kategori': menu.kategori,
           'gambar': menu.gambar ?? '',
+          'bagian': menu.bagian,
         }),
       );
       final data = jsonDecode(response.body);
@@ -181,6 +193,7 @@ class ApiService {
           'deskripsi': menu.deskripsi ?? '',
           'kategori': menu.kategori,
           'gambar': menu.gambar ?? '',
+          'bagian': menu.bagian,
         }),
       );
       final data = jsonDecode(response.body);
@@ -390,6 +403,7 @@ class ApiService {
                     subjek: e['subjek'] ?? '',
                     pesan: e['pesan'] ?? '',
                     tanggalDikirim: e['tanggalDikirim'],
+                    sudahDibalas: e['sudahDibalas'] == true || e['sudahDibalas'] == 1 || e['sudahDibalas'] == 'true',
                   ))
               .toList();
         }
@@ -408,6 +422,26 @@ class ApiService {
       return data['success'] == true;
     } catch (e) {
       print("Error deletePesanKontak: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> replyPesanKontak(int id, String pesan) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/pesan-kontak/$id/balas'),
+        headers: _headers,
+        body: jsonEncode({
+          'pesan': pesan,
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      print("Error replyPesanKontak: $e");
       return false;
     }
   }

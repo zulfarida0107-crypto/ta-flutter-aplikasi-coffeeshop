@@ -24,6 +24,16 @@ class _PesanKontakPageState extends State<PesanKontakPage> {
     setState(() => isLoading = true);
     var data = await ApiService.getAllPesanKontak();
     if (!mounted) return;
+
+    data.sort((a, b) {
+      if (a.sudahDibalas == b.sudahDibalas) {
+        int idA = a.id ?? 0;
+        int idB = b.id ?? 0;
+        return idB.compareTo(idA);
+      }
+      return a.sudahDibalas ? 1 : -1;
+    });
+
     setState(() {
       listPesan = data;
       isLoading = false;
@@ -108,6 +118,8 @@ class _PesanKontakPageState extends State<PesanKontakPage> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                            const SizedBox(height: 6),
+                            _buildReplyStatusBadge(kotakPesan.sudahDibalas),
                           ],
                         ),
                         onTap: () {
@@ -184,6 +196,28 @@ class _PesanKontakPageState extends State<PesanKontakPage> {
     );
   }
 
+  Widget _buildReplyStatusBadge(bool sudahDibalas) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: sudahDibalas ? Colors.green[50] : Colors.orange[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: sudahDibalas ? Colors.green : Colors.orange,
+          width: 1.5,
+        ),
+      ),
+      child: Text(
+        sudahDibalas ? "Sudah Membalas" : "Belum Membalas",
+        style: TextStyle(
+          color: sudahDibalas ? Colors.green[800] : Colors.orange[800],
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
   void _showDetailDialog(PesanKontakEntity pesanKontak) {
     showDialog(
       context: context,
@@ -236,6 +270,8 @@ class _PesanKontakPageState extends State<PesanKontakPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              const SizedBox(height: 8),
+              _buildReplyStatusBadge(pesanKontak.sudahDibalas),
             ],
           ),
         ),
@@ -299,26 +335,40 @@ class _PesanKontakPageState extends State<PesanKontakPage> {
               backgroundColor: const Color.fromRGBO(121, 85, 72, 1),
             ),
             onPressed: () async {
-              Navigator.pop(ctx);
-              final Uri emailLaunchUri = Uri(
-                scheme: 'mailto',
-                path: pesanKontak.email,
-                queryParameters: {
-                  'subject': 'Balasan: ${pesanKontak.subjek}',
-                  'body': balasanController.text,
+              // Tampilkan dialog loading
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext context) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.brown),
+                  );
                 },
               );
-              try {
-                if (await canLaunchUrl(emailLaunchUri)) {
-                  await launchUrl(emailLaunchUri, mode: LaunchMode.externalApplication);
-                } else {
-                  await launchUrl(emailLaunchUri);
+
+              bool success = await ApiService.replyPesanKontak(pesanKontak.id ?? 0, balasanController.text);
+              
+              // Tutup dialog loading
+              if (context.mounted) {
+                Navigator.pop(context); // Tutup loading
+              }
+
+              if (success) {
+                if (context.mounted) {
+                  Navigator.pop(ctx); // Tutup form dialog jika sukses
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Balasan email berhasil terkirim langsung!"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
                 }
-              } catch (e) {
+                _refreshData();
+              } else {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Tidak dapat membuka aplikasi Gmail/email: $e"),
+                    const SnackBar(
+                      content: Text("Gagal mengirim email balasan. Pastikan App Password Gmail admin sudah dikonfigurasi di backend."),
                       backgroundColor: Colors.red,
                     ),
                   );

@@ -5,6 +5,7 @@ class MenuProdukEntity {
   final String? deskripsi;
   final String kategori;
   final String? gambar;
+  final String bagian;
 
   MenuProdukEntity({
     required this.id,
@@ -13,9 +14,14 @@ class MenuProdukEntity {
     this.deskripsi,
     required this.kategori,
     this.gambar,
-  });
+    required String bagian,
+  }) : this.bagian = (bagian == 'Produk Unggulan Kami') ? 'Produk Unggulan' : bagian;
 
   factory MenuProdukEntity.fromMap(Map<String, dynamic> map) {
+    String bagianVal = map[COL_BAGIAN_KEY] ?? 'Menu Kami';
+    if (bagianVal == 'Produk Unggulan Kami') {
+      bagianVal = 'Produk Unggulan';
+    }
     return MenuProdukEntity(
       id: map[COL_ID_KEY] is int ? map[COL_ID_KEY] : (int.tryParse(map[COL_ID_KEY].toString()) ?? 0),
       namaProduk: map[COL_NAMA_PRODUK_KEY] ?? '',
@@ -23,6 +29,7 @@ class MenuProdukEntity {
       deskripsi: map[COL_DESKRIPSI_KEY],
       kategori: map[COL_KATEGORI_KEY] ?? '',
       gambar: map[COL_GAMBAR_KEY],
+      bagian: bagianVal,
     );
   }
 
@@ -34,6 +41,7 @@ class MenuProdukEntity {
       COL_DESKRIPSI_KEY: deskripsi,
       COL_KATEGORI_KEY: kategori,
       COL_GAMBAR_KEY: gambar,
+      COL_BAGIAN_KEY: bagian,
     };
   }
 
@@ -44,4 +52,5 @@ class MenuProdukEntity {
   static String COL_DESKRIPSI_KEY = "deskripsi";
   static String COL_KATEGORI_KEY = "kategori";
   static String COL_GAMBAR_KEY = "gambar";
+  static String COL_BAGIAN_KEY = "bagian";
 }

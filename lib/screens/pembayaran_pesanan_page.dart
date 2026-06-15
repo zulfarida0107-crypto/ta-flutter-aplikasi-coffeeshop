@@ -1,7 +1,21 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/pesanan_entity.dart';
+import '../models/desain_pesanan_entity.dart';
 import '../services/api_service.dart';
+
+class PaymentItem {
+  final bool isDesain;
+  final PesananEntity pesanan;
+  final DesainPesananEntity? desain;
+
+  PaymentItem({
+    required this.isDesain,
+    required this.pesanan,
+    this.desain,
+  });
+}
 
 class PembayaranPesananPage extends StatefulWidget {
   const PembayaranPesananPage({super.key});
@@ -11,7 +25,7 @@ class PembayaranPesananPage extends StatefulWidget {
 }
 
 class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
-  List<PesananEntity> listPembayaran = [];
+  List<PaymentItem> listPembayaran = [];
   bool isLoading = true;
 
   @override
@@ -22,15 +36,41 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
 
   void _fetchData() async {
     setState(() => isLoading = true);
-    var data = await ApiService.getAllPesanan();
+    var pesananData = await ApiService.getAllPesanan();
+    var desainData = await ApiService.getAllDesainPesanan();
+
+    List<PaymentItem> temp = [];
+
+    // 1. Tambahkan pesanan reguler yang berstatus 'proses' atau 'selesai'
+    for (var p in pesananData) {
+      if (p.statusPesanan.toLowerCase() == 'proses' ||
+          p.statusPesanan.toLowerCase() == 'selesai') {
+        temp.add(PaymentItem(isDesain: false, pesanan: p));
+      }
+    }
+
+    // 2. Tambahkan pesanan desain kue custom yang berstatus 'proses' atau 'selesai'
+    for (var d in desainData) {
+      if (d.statusPesanan.toLowerCase() == 'proses' ||
+          d.statusPesanan.toLowerCase() == 'selesai') {
+        var parent = pesananData.firstWhere(
+          (p) => p.id == d.idPesanan,
+          orElse: () => PesananEntity(
+            id: d.idPesanan,
+            namaPelanggan: 'Pelanggan #${d.idPesanan}',
+            idProduk: 0,
+            jumlah: 0,
+            totalHarga: 0.0,
+            statusPesanan: d.statusPesanan,
+            detailPesanan: '[]',
+          ),
+        );
+        temp.add(PaymentItem(isDesain: true, pesanan: parent, desain: d));
+      }
+    }
+
     setState(() {
-      listPembayaran = data
-          .where(
-            (p) =>
-                p.statusPesanan.toLowerCase() == 'proses' ||
-                p.statusPesanan.toLowerCase() == 'selesai',
-          )
-          .toList();
+      listPembayaran = temp;
       isLoading = false;
     });
   }
@@ -164,18 +204,176 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
     );
   }
 
+  void _showDesainDetailOnlyDialog(PaymentItem item) {
+    List<dynamic> items = [];
+    try {
+      if (item.pesanan.detailPesanan.isNotEmpty && item.pesanan.detailPesanan != '[]') {
+        items = jsonDecode(item.pesanan.detailPesanan);
+      }
+    } catch (_) {}
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFFFDF1E9),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Detail Pembayaran (Kue Custom)",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF3E2723),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Pelanggan: ${item.pesanan.namaPelanggan}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (item.desain!.keterangan != null && item.desain!.keterangan!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    "Deskripsi Desain: ${item.desain!.keterangan}",
+                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                  ),
+                ],
+                if (item.desain!.fileDesainUrl != null && item.desain!.fileDesainUrl!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Gambar Desain:",
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Center(
+                    child: Container(
+                      height: 150,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: item.desain!.fileDesainUrl!.startsWith('http')
+                          ? Image.network(
+                              item.desain!.fileDesainUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, o, s) => const Icon(Icons.broken_image, size: 50),
+                            )
+                          : Image.file(
+                              File(item.desain!.fileDesainUrl!),
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, o, s) => const Icon(Icons.broken_image, size: 50),
+                            ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                const Text(
+                  "Daftar Item Menu:",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...items.map((menuItem) {
+                  final name = menuItem['namaProduk'] ?? menuItem['name'] ?? '-';
+                  final qty = menuItem['qty'] ?? menuItem['quantity'] ?? 1;
+                  final subtotal = menuItem['subtotal'] ?? (((menuItem['harga'] ?? menuItem['price'] ?? 0) as num) * (qty as num));
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Text(
+                      "- $name x$qty (Rp ${formatRupiah(subtotal)})",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  );
+                }),
+                const Divider(height: 30, thickness: 1),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Status:",
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: item.desain!.statusPesanan.toLowerCase() == 'selesai'
+                            ? Colors.green
+                            : item.desain!.statusPesanan.toLowerCase() == 'proses'
+                            ? Colors.orange
+                            : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        item.desain!.statusPesanan,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+                Text(
+                  "TOTAL BAYAR: Rp ${formatRupiah(item.pesanan.totalHarga)}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6D4C41),
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 25),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      "TUTUP",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // --- POP-UP EDIT STATUS ---
-  void _showEditStatusDialog(PesananEntity pesanan) {
+  void _showEditStatusDialog(PaymentItem item) {
     List<String> statusOptions = ["Proses", "Selesai"];
 
-    String selectedStatus = statusOptions.contains(pesanan.statusPesanan)
-        ? pesanan.statusPesanan
+    String currentStatus = item.isDesain ? item.desain!.statusPesanan : item.pesanan.statusPesanan;
+    String selectedStatus = statusOptions.contains(currentStatus)
+        ? currentStatus
         : statusOptions[0];
 
     List<dynamic> items = [];
     try {
-      if (pesanan.detailPesanan.isNotEmpty && pesanan.detailPesanan != '[]') {
-        items = jsonDecode(pesanan.detailPesanan);
+      if (item.pesanan.detailPesanan.isNotEmpty && item.pesanan.detailPesanan != '[]') {
+        items = jsonDecode(item.pesanan.detailPesanan);
       }
     } catch (_) {}
 
@@ -189,146 +387,164 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
           backgroundColor: const Color(0xFFFDF1E9),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Detail Pembayaran",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF3E2723),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  "Pelanggan: ${pesanan.namaPelanggan}",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  "Daftar Item Menu:",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...items.map((item) {
-                  final name = item['namaProduk'] ?? item['name'] ?? '-';
-                  final qty = item['qty'] ?? item['quantity'] ?? 1;
-                  final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 4.0),
-                    child: Text(
-                      "- $name x$qty (Rp ${formatRupiah(subtotal)})",
-                      style: const TextStyle(fontSize: 14),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.isDesain ? "Detail Pembayaran (Kue Custom)" : "Detail Pembayaran",
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3E2723),
                     ),
-                  );
-                }),
-                const Divider(height: 30, thickness: 1),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Status:", style: TextStyle(fontSize: 15)),
-                    DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: statusOptions.contains(selectedStatus)
-                            ? selectedStatus
-                            : statusOptions[0],
-                        dropdownColor: const Color(0xFFFDF1E9),
-                        icon: const Icon(
-                          Icons.arrow_drop_down,
-                          color: Colors.grey,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "Pelanggan: ${item.pesanan.namaPelanggan}",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (item.isDesain && item.desain!.keterangan != null && item.desain!.keterangan!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      "Deskripsi: ${item.desain!.keterangan}",
+                      style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Daftar Item Menu:",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...items.map((menuItem) {
+                    final name = menuItem['namaProduk'] ?? menuItem['name'] ?? '-';
+                    final qty = menuItem['qty'] ?? menuItem['quantity'] ?? 1;
+                    final subtotal = menuItem['subtotal'] ?? (((menuItem['harga'] ?? menuItem['price'] ?? 0) as num) * (qty as num));
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 4.0),
+                      child: Text(
+                        "- $name x$qty (Rp ${formatRupiah(subtotal)})",
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    );
+                  }),
+                  const Divider(height: 30, thickness: 1),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Status:", style: TextStyle(fontSize: 15)),
+                      DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedStatus,
+                          dropdownColor: const Color(0xFFFDF1E9),
+                          icon: const Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.grey,
+                          ),
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                          items: statusOptions.map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            setDialogState(() {
+                              selectedStatus = newValue!;
+                            });
+                          },
                         ),
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    "TOTAL BAYAR: Rp ${formatRupiah(item.pesanan.totalHarga)}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF6D4C41),
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          "BATAL",
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        items: statusOptions.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) {
-                          setDialogState(() {
-                            selectedStatus = newValue!;
-                          });
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8D6E63),
+                          elevation: 4,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        onPressed: () async {
+                          if (item.isDesain) {
+                            DesainPesananEntity desainBaru = DesainPesananEntity(
+                              id: item.desain!.id,
+                              idPesanan: item.desain!.idPesanan,
+                              fileDesainUrl: item.desain!.fileDesainUrl,
+                              keterangan: item.desain!.keterangan,
+                              tanggalUpload: item.desain!.tanggalUpload,
+                              statusPesanan: selectedStatus,
+                            );
+                            await ApiService.updateDesainPesanan(desainBaru);
+                          } else {
+                            PesananEntity pesananBaru = PesananEntity(
+                              id: item.pesanan.id,
+                              namaPelanggan: item.pesanan.namaPelanggan,
+                              idProduk: item.pesanan.idProduk,
+                              jumlah: item.pesanan.jumlah,
+                              totalHarga: item.pesanan.totalHarga,
+                              statusPesanan: selectedStatus,
+                              tanggalPesanan: item.pesanan.tanggalPesanan,
+                              detailPesanan: item.pesanan.detailPesanan,
+                            );
+                            await ApiService.updatePesanan(pesananBaru);
+                          }
+                          if (context.mounted) Navigator.pop(context);
+                          _fetchData();
                         },
+                        child: const Text(
+                          "SIMPAN",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 15),
-                Text(
-                  "TOTAL BAYAR: Rp ${formatRupiah(pesanan.totalHarga)}",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF6D4C41),
-                    fontSize: 18,
+                    ],
                   ),
-                ),
-                const SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        "BATAL",
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8D6E63),
-                        elevation: 4,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 28,
-                          vertical: 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      onPressed: () async {
-                        PesananEntity pesananBaru = PesananEntity(
-                          id: pesanan.id,
-                          namaPelanggan: pesanan.namaPelanggan,
-                          idProduk: pesanan.idProduk,
-                          jumlah: pesanan.jumlah,
-                          totalHarga: pesanan.totalHarga,
-                          statusPesanan: selectedStatus,
-                          tanggalPesanan: pesanan.tanggalPesanan,
-                          detailPesanan: pesanan.detailPesanan,
-                        );
-
-                        await ApiService.updatePesanan(pesananBaru);
-                        if (context.mounted) Navigator.pop(context);
-                        _fetchData();
-                      },
-                      child: const Text(
-                        "SIMPAN",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -419,17 +635,19 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                       ),
                     ),
                     title: Text(
-                      item.namaPelanggan,
+                      item.isDesain 
+                          ? "${item.pesanan.namaPelanggan} (Kue Custom)" 
+                          : item.pesanan.namaPelanggan,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Total Tagihan: Rp ${formatRupiah(item.totalHarga)}",
+                          "Total Tagihan: Rp ${formatRupiah(item.pesanan.totalHarga)}",
                         ),
                         const SizedBox(height: 4),
-                        _buildStatusTag(item.statusPesanan),
+                        _buildStatusTag(item.isDesain ? item.desain!.statusPesanan : item.pesanan.statusPesanan),
                       ],
                     ),
                     trailing: Row(
@@ -449,8 +667,12 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
     );
   }
 
-  void _showPaymentDetail(PesananEntity pesanan) {
-    _showDetailOnlyDialog(pesanan);
+  void _showPaymentDetail(PaymentItem item) {
+    if (item.isDesain) {
+      _showDesainDetailOnlyDialog(item);
+    } else {
+      _showDetailOnlyDialog(item.pesanan);
+    }
   }
 
   Widget _buildEmptyState() {
