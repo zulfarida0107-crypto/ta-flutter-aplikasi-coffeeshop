@@ -433,9 +433,40 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
               ],
             ),
             const SizedBox(height: 8),
+            const Text("Gambar Desain:", style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 4),
+            if (desain.fileDesainUrl != null && desain.fileDesainUrl!.isNotEmpty)
+              Builder(
+                builder: (context) {
+                  String url = desain.fileDesainUrl!;
+                  return Center(
+                    child: Container(
+                      height: 150,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: url.startsWith('http')
+                          ? Image.network(
+                              url,
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, o, s) => const Icon(Icons.broken_image, size: 50),
+                            )
+                          : Image.file(
+                              File(url),
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, o, s) => const Icon(Icons.broken_image, size: 50),
+                            ),
+                    ),
+                  );
+                }
+              )
+            else
+              const Text("-", style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
             const Text("Link/URL Desain:", style: TextStyle(fontSize: 16)),
-            if (desain.fileDesainUrl != null &&
-                desain.fileDesainUrl!.isNotEmpty)
+            if (desain.fileDesainUrl != null && desain.fileDesainUrl!.isNotEmpty)
               Builder(
                 builder: (context) {
                   String url = desain.fileDesainUrl!;
@@ -466,49 +497,11 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
                       padding: const EdgeInsets.only(top: 4.0),
                       child: Text(
                         url,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
+                          color: isFile ? Colors.black87 : Colors.blue,
+                          decoration: isFile ? TextDecoration.none : TextDecoration.underline,
                         ),
-                      ),
-                    ),
-                  );
-                },
-              )
-            else
-              const Text("-", style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 8),
-            const Text("Gambar Desain:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            if (desain.fileDesainUrl != null &&
-                desain.fileDesainUrl!.isNotEmpty)
-              Builder(
-                builder: (context) {
-                  String url = desain.fileDesainUrl!;
-                  bool isHttp = url.startsWith('http');
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Center(
-                      child: Container(
-                        height: 150,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: isHttp
-                            ? Image.network(
-                                url,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.broken_image, size: 50),
-                              )
-                            : Image.file(
-                                File(url),
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.broken_image, size: 50),
-                              ),
                       ),
                     ),
                   );
