@@ -5,7 +5,9 @@ import 'daftar_pesanan_page.dart';
 import 'desain_pesanan_page.dart';
 import 'pesan_kontak_page.dart';
 import 'pembayaran_pesanan_page.dart';
-// import 'login_page.dart';
+import 'login_page.dart';
+import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -47,15 +49,18 @@ class HomePage extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         Navigator.pop(context); // tutup dialog
-                        // Navigator.pushAndRemoveUntil(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) => const LoginPage(),
-                        //   ),
-                        //   (route) => false, // hapus semua stack
-                        // );
+                        ApiService.token = null; // hapus token
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('is_in_desain_page', false); // reset desain page flag
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                          (route) => false, // hapus semua stack
+                        );
                       },
                       child: const Text(
                         "Ya",

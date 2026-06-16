@@ -5,7 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/desain_pesanan_entity.dart';
+import '../models/pesanan_entity.dart';
+import '../models/menu_produk_entity.dart';
 import '../services/api_service.dart';
+import 'dart:convert';
+import 'home_page.dart';
 
 class DesainPesananPage extends StatefulWidget {
   const DesainPesananPage({super.key});
@@ -45,7 +49,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
     setState(() => isLoading = true);
     var data = await ApiService.getAllDesainPesanan();
     setState(() {
-      listDesain = data;
+      listDesain = data.where((d) => d.statusPesanan.toLowerCase() == 'baru').toList();
       isLoading = false;
     });
   }
@@ -59,7 +63,16 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomePage()),
+              );
+            }
+          },
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,12 +462,29 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
   }
 
   // --- POP-UP FORM UNTUK TAMBAH & EDIT ---
-  void _showFormDialog({DesainPesananEntity? desain}) {
+  void _showFormDialog({DesainPesananEntity? desain}) async {
     bool isEdit = desain != null;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.brown)),
+    );
+
+    List<MenuProdukEntity> listMenu = [];
+    try {
+      listMenu = await ApiService.getAllMenuProduk();
+    } catch (_) {}
+
+    if (context.mounted) Navigator.pop(context); // close loading
+
+    List<MenuProdukEntity> kueCustomMenu = listMenu.where((m) => m.kategori.toLowerCase() == 'kue custom').toList();
+    int? selectedIdPesanan;
 
     TextEditingController idPesananController = TextEditingController(
       text: isEdit ? desain.idPesanan.toString() : "",
     );
+
     TextEditingController urlController = TextEditingController(
       text: isEdit ? desain.fileDesainUrl : "",
     );
@@ -479,11 +509,59 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: idPesananController,
-                decoration: const InputDecoration(labelText: "ID Pesanan"),
-                keyboardType: TextInputType.number,
-              ),
+              if (isEdit)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  margin: const EdgeInsets.only(bottom: 15),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent, 
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.brown.shade300, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.receipt_long, color: Colors.brown.shade700),
+                      const SizedBox(width: 12),
+                      Text(
+                        "ID Pesanan: ${desain!.id}",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.brown.shade900,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  margin: const EdgeInsets.only(bottom: 15),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.brown.shade300, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.receipt_long, color: Colors.brown.shade400),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "ID Pesanan: Otomatis",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.brown.shade400,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Row(
                 children: [
                   Expanded(
@@ -566,7 +644,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
 
               DesainPesananEntity data = DesainPesananEntity(
                 id: isEdit ? desain.id : 0,
-                idPesanan: int.tryParse(idPesananController.text) ?? 0,
+                idPesanan: isEdit ? desain.idPesanan : 0,
                 fileDesainUrl: urlController.text,
                 keterangan: keteranganController.text,
                 tanggalUpload: isEdit ? desain.tanggalUpload : tanggalSekarang,
