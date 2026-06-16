@@ -728,9 +728,19 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
               String tanggalSekarang =
                   DateTime.now().toString().substring(0, 16);
 
+              int finalIdPesanan = isEdit ? desain.idPesanan : 1;
+              if (!isEdit) {
+                try {
+                  var pesananList = await ApiService.getAllPesanan();
+                  if (pesananList.isNotEmpty) {
+                    finalIdPesanan = pesananList.first.id;
+                  }
+                } catch (_) {}
+              }
+
               DesainPesananEntity data = DesainPesananEntity(
                 id: isEdit ? desain.id : 0,
-                idPesanan: isEdit ? desain.idPesanan : 0,
+                idPesanan: finalIdPesanan,
                 fileDesainUrl: urlController.text,
                 keterangan: finalKeterangan,
                 tanggalUpload: isEdit ? desain.tanggalUpload : tanggalSekarang,

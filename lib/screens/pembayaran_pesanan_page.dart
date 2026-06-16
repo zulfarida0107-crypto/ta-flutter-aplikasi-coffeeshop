@@ -201,7 +201,7 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
               const SizedBox(height: 15),
 
               Text(
-                "TOTAL BAYAR: Rp ${formatRupiah(pesanan.totalHarga)}",
+                "Total Bayar: Rp ${formatRupiah(pesanan.totalHarga)}",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF6D4C41),
@@ -366,7 +366,7 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                 ),
                 const SizedBox(height: 15),
                 Text(
-                  "TOTAL BAYAR: Rp ${formatRupiah(valHarga)}",
+                  "Total Bayar: Rp ${formatRupiah(valHarga)}",
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF6D4C41),
@@ -564,7 +564,7 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                   ),
                   const SizedBox(height: 15),
                   Text(
-                    "TOTAL BAYAR: Rp ${formatRupiah(item.pesanan.totalHarga)}",
+                    "Total Bayar: Rp ${formatRupiah(item.pesanan.totalHarga)}",
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF6D4C41),
@@ -729,18 +729,8 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                     title: Builder(
                       builder: (context) {
                         if (item.isDesain) {
-                          String extNama = "Kue Custom";
-                          String raw = item.desain!.keterangan ?? "";
-                          if (raw.contains("Nama Produk:")) {
-                            for (var line in raw.split('\n')) {
-                              if (line.startsWith("Nama Produk:")) extNama = line.replaceAll("Nama Produk:", "").trim();
-                            }
-                          } else if (raw.contains("Template Kue Custom:")) {
-                            var parts = raw.split("Template Kue Custom:")[1].split(".");
-                            if (parts.isNotEmpty) extNama = parts[0].trim();
-                          }
                           return Text(
-                            "ID Pesanan: ${item.desain!.id} - $extNama",
+                            "ID Pesanan: ${item.desain!.id} - Kategori: Kue Custom",
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           );
                         } else {
@@ -751,29 +741,54 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                         }
                       }
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Builder(
-                          builder: (context) {
-                            if (item.isDesain) {
-                              String extHarga = "0";
-                              String raw = item.desain!.keterangan ?? "";
-                              if (raw.contains("Harga:")) {
-                                for (var line in raw.split('\n')) {
-                                  if (line.startsWith("Harga:")) extHarga = line.replaceAll("Harga:", "").trim();
-                                }
-                              }
-                              num val = num.tryParse(extHarga) ?? 0;
-                              return Text("Total Bayar: Rp ${formatRupiah(val)}");
-                            } else {
-                              return Text("Total Bayar: Rp ${formatRupiah(item.pesanan.totalHarga)}");
+                    subtitle: Builder(
+                      builder: (context) {
+                        if (item.isDesain) {
+                          String extNama = "Kue Custom";
+                          String raw = item.desain!.keterangan ?? "";
+                          if (raw.contains("Nama Produk:")) {
+                            for (var line in raw.split('\n')) {
+                              if (line.startsWith("Nama Produk:")) extNama = line.replaceAll("Nama Produk:", "").trim();
+                            }
+                          } else if (raw.contains("Template Kue Custom:")) {
+                            var parts = raw.split("Template Kue Custom:")[1].split(".");
+                            if (parts.isNotEmpty) extNama = parts[0].trim();
+                          }
+
+                          String extHarga = "0";
+                          if (raw.contains("Harga:")) {
+                            for (var line in raw.split('\n')) {
+                              if (line.startsWith("Harga:")) extHarga = line.replaceAll("Harga:", "").trim();
                             }
                           }
-                        ),
-                        const SizedBox(height: 4),
-                        _buildStatusTag(item.isDesain ? item.desain!.statusPesanan : item.pesanan.statusPesanan),
-                      ],
+                          num val = num.tryParse(extHarga) ?? 0;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text(
+                                "Nama Produk: $extNama",
+                                style: const TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 2),
+                              Text("Total Bayar: Rp ${formatRupiah(val)}"),
+                              const SizedBox(height: 4),
+                              _buildStatusTag(item.desain!.statusPesanan),
+                            ],
+                          );
+                        } else {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text("Total Bayar: Rp ${formatRupiah(item.pesanan.totalHarga)}"),
+                              const SizedBox(height: 4),
+                              _buildStatusTag(item.pesanan.statusPesanan),
+                            ],
+                          );
+                        }
+                      }
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,

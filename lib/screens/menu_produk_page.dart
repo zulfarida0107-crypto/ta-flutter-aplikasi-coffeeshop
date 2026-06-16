@@ -500,10 +500,18 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
                 }
               }
 
-              if (shouldCreateDesain) {
+               if (shouldCreateDesain) {
+                int fallbackPesananId = 1;
+                try {
+                  var pesananList = await ApiService.getAllPesanan();
+                  if (pesananList.isNotEmpty) {
+                    fallbackPesananId = pesananList.first.id;
+                  }
+                } catch (_) {}
+
                 DesainPesananEntity desain = DesainPesananEntity(
                   id: 0,
-                  idPesanan: 0,
+                  idPesanan: fallbackPesananId,
                   fileDesainUrl: data.gambar ?? '1.jpg',
                   keterangan: "Kategori: Kue Custom\nNama Produk: ${data.namaProduk}\nDeskripsi: ${data.deskripsi ?? ''}",
                   tanggalUpload: DateTime.now().toIso8601String(),
