@@ -20,6 +20,8 @@ class DesainPesananPage extends StatefulWidget {
 
 class _DesainPesananPageState extends State<DesainPesananPage> {
   List<DesainPesananEntity> listDesain = [];
+  List<PesananEntity> listPesanan = [];
+  List<MenuProdukEntity> listMenu = [];
   bool isLoading = true;
 
   @override
@@ -47,9 +49,14 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
 
   void _refreshData() async {
     setState(() => isLoading = true);
-    var data = await ApiService.getAllDesainPesanan();
+    var dataDesain = await ApiService.getAllDesainPesanan();
+    var dataPesanan = await ApiService.getAllPesanan();
+    var dataMenu = await ApiService.getAllMenuProduk();
+
     setState(() {
-      listDesain = data.where((d) => d.statusPesanan.toLowerCase() == 'baru').toList();
+      listPesanan = dataPesanan;
+      listMenu = dataMenu;
+      listDesain = dataDesain.where((d) => d.statusPesanan.toLowerCase() == 'baru').toList();
       isLoading = false;
     });
   }
@@ -106,6 +113,25 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
                   itemCount: listDesain.length,
                   itemBuilder: (context, index) {
                     var desain = listDesain[index];
+                    // Extract Nama Produk and Deskripsi from keterangan
+                    String rawKeterangan = desain.keterangan ?? "";
+                    String extNama = "Kue Custom";
+                    String extDeskripsi = rawKeterangan;
+
+                    if (rawKeterangan.contains("Nama Produk:")) {
+                      var lines = rawKeterangan.split('\n');
+                      for (var line in lines) {
+                        if (line.startsWith("Nama Produk:")) extNama = line.replaceAll("Nama Produk:", "").trim();
+                        if (line.startsWith("Deskripsi:")) extDeskripsi = line.replaceAll("Deskripsi:", "").trim();
+                      }
+                    } else if (rawKeterangan.contains("Template Kue Custom:")) {
+                      var parts = rawKeterangan.split("Template Kue Custom:")[1].split(".");
+                      if (parts.isNotEmpty) {
+                        extNama = parts[0].trim();
+                        if (parts.length > 1) extDeskripsi = parts.sublist(1).join(".").trim();
+                      }
+                    }
+
                     return Card(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -118,19 +144,22 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
                           child: const Icon(Icons.cake, color: Colors.brown),
                         ),
                         title: Text(
-                          "ID Pesanan: ${desain.id}",
+                          "ID Pesanan: ${desain.id} - $extNama",
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildSubtitleDescription(desain.keterangan),
+                            if (extDeskripsi.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(extDeskripsi, style: const TextStyle(color: Colors.grey)),
+                            ],
                             const SizedBox(height: 4),
                             _buildStatusBadge(desain.statusPesanan),
                           ],
                         ),
                         onTap: () {
-                          _showDetailDialog(desain);
+                          _showDetailDialog(desain, extNama);
                         },
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -138,7 +167,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
                             IconButton(
                               icon: const Icon(Icons.edit, color: Colors.blue),
                               onPressed: () {
-                                _showFormDialog(desain: desain);
+                                _showFormDialog(desain: desain, namaProduk: extNama);
                               },
                             ),
                             IconButton(
@@ -358,7 +387,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
   }
 
   // --- POP-UP UNTUK VIEW DETAIL ---
-  void _showDetailDialog(DesainPesananEntity desain) {
+  void _showDetailDialog(DesainPesananEntity desain, String namaProduk) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -372,6 +401,11 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
           children: [
             Text(
               "ID Pesanan: ${desain.id}",
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Nama Produk: $namaProduk",
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
@@ -462,7 +496,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
   }
 
   // --- POP-UP FORM UNTUK TAMBAH & EDIT ---
-  void _showFormDialog({DesainPesananEntity? desain}) async {
+  void _showFormDialog({DesainPesananEntity? desain, String namaProduk = "Kue Custom"}) async {
     bool isEdit = desain != null;
 
     showDialog(
@@ -523,12 +557,14 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
                     children: [
                       Icon(Icons.receipt_long, color: Colors.brown.shade700),
                       const SizedBox(width: 12),
-                      Text(
-                        "ID Pesanan: ${desain!.id}",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.brown.shade900,
+                      Expanded(
+                        child: Text(
+                          "ID Pesanan: ${desain.id} - $namaProduk",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.brown.shade900,
+                          ),
                         ),
                       ),
                     ],
