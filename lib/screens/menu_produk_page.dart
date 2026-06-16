@@ -513,7 +513,7 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
                   id: 0,
                   idPesanan: fallbackPesananId,
                   fileDesainUrl: data.gambar ?? '1.jpg',
-                  keterangan: "Kategori: Kue Custom\nNama Produk: ${data.namaProduk}\nDeskripsi: ${data.deskripsi ?? ''}",
+                  keterangan: "Kategori: Kue Custom\nNama Produk: ${data.namaProduk}\nDeskripsi: ${data.deskripsi ?? ''}\nHarga: ${data.harga.toInt()}",
                   tanggalUpload: DateTime.now().toIso8601String(),
                   statusPesanan: "Baru",
                 );
