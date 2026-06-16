@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/pesanan_entity.dart';
 import '../models/desain_pesanan_entity.dart';
 import '../services/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PaymentItem {
   final bool isDesain;
@@ -328,6 +329,38 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                               fit: BoxFit.cover,
                               errorBuilder: (c, o, s) => const Icon(Icons.broken_image, size: 50),
                             ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Link/URL Desain:",
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  InkWell(
+                    onTap: () async {
+                      String url = item.desain!.fileDesainUrl!;
+                      bool isFile = url.startsWith('/') ||
+                          url.startsWith('file://') ||
+                          url.startsWith('content://') ||
+                          url.startsWith('C:');
+                      if (!isFile) {
+                        String launchUriStr = url.startsWith('http') ? url : 'https://$url';
+                        final uri = Uri.parse(launchUriStr);
+                        try {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        } catch (e) {
+                          debugPrint("Tidak dapat membuka URL: $e");
+                        }
+                      }
+                    },
+                    child: Text(
+                      item.desain!.fileDesainUrl!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
                   ),
                 ],
