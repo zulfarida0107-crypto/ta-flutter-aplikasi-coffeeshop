@@ -559,9 +559,45 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
     TextEditingController urlController = TextEditingController(
       text: isEdit ? desain.fileDesainUrl : "",
     );
-    TextEditingController keteranganController = TextEditingController(
-      text: isEdit ? desain.keterangan : "",
-    );
+
+    String extDeskripsi = "";
+    if (isEdit && desain.keterangan != null) {
+      String rawKeterangan = desain.keterangan!;
+      if (rawKeterangan.startsWith("Template Kue Custom:")) {
+        String rest = rawKeterangan.substring("Template Kue Custom:".length).trim();
+        List<String> parts = [];
+        if (rest.contains(" . ")) {
+          parts = rest.split(" . ");
+        } else if (rest.contains("\n")) {
+          parts = rest.split("\n");
+        }
+        
+        if (parts.length >= 2) {
+          String desc = parts.sublist(1).join(" . ").trim();
+          if (desc.startsWith("Deskripsi:")) {
+            desc = desc.substring("Deskripsi:".length).trim();
+          }
+          if (desc.contains(" . Harga:")) {
+            desc = desc.split(" . Harga:")[0].trim();
+          } else if (desc.contains("\nHarga:")) {
+            desc = desc.split("\nHarga:")[0].trim();
+          }
+          extDeskripsi = desc;
+        } else {
+          extDeskripsi = rest;
+        }
+      } else if (rawKeterangan.contains("Kategori: Kue Custom")) {
+        List<String> lines = rawKeterangan.split("\n");
+        for (var line in lines) {
+          if (line.startsWith("Deskripsi:")) {
+            extDeskripsi = line.substring("Deskripsi:".length).trim();
+          }
+        }
+      } else {
+        extDeskripsi = rawKeterangan;
+      }
+    }
+    TextEditingController keteranganController = TextEditingController(text: extDeskripsi);
 
     String extHarga = "";
     if (isEdit && desain.keterangan != null && desain.keterangan!.contains("Harga:")) {
@@ -580,147 +616,291 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
       else if (desain.statusPesanan.toLowerCase() == 'selesai') selectedStatus = 'Selesai';
     }
 
+    StateSetter? dialogStateSetter;
+    urlController.addListener(() {
+      if (dialogStateSetter != null) {
+        dialogStateSetter!(() {});
+      }
+    });
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
           isEdit ? "Edit Desain Kue Custom" : "Tambah Desain Kue Custom",
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isEdit)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  margin: const EdgeInsets.only(bottom: 15),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent, 
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.brown.shade300, width: 1.5),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.receipt_long, color: Colors.brown.shade700),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "ID Pesanan: ${desain.id} - $namaProduk",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.brown.shade900,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  margin: const EdgeInsets.only(bottom: 15),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.brown.shade300, width: 1.5),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.receipt_long, color: Colors.brown.shade400),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "ID Pesanan: Otomatis",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.brown.shade400,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              Row(
+        content: StatefulBuilder(
+          builder: (context, setStateSB) {
+            dialogStateSetter = setStateSB;
+
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: urlController,
-                      decoration: const InputDecoration(
-                        labelText: "Upload / Link URL Gambar",
+                  // ID Pesanan part (keep current Edit container as requested: "kecuali pada bagian ID nya")
+                  if (isEdit)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      margin: const EdgeInsets.only(bottom: 15),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent, 
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.brown.shade300, width: 1.5),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.receipt_long, color: Colors.brown.shade700),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              "ID Pesanan: ${desain.id} - $namaProduk",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.brown.shade900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      margin: const EdgeInsets.only(bottom: 15),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.brown.shade300, width: 1.5),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.receipt_long, color: Colors.brown.shade400),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              "ID Pesanan: Otomatis",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.brown.shade400,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+
+                  const SizedBox(height: 8),
+                  Text(
+                    "Nama Produk: $namaProduk",
+                    style: const TextStyle(fontSize: 16),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.paste, color: Colors.blue),
-                    tooltip: "Paste Link",
-                    onPressed: () async {
-                      ClipboardData? data = await Clipboard.getData(
-                        Clipboard.kTextPlain,
-                      );
-                      if (data != null && data.text != null) {
-                        urlController.text = data.text!;
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.upload_file, color: Colors.brown),
-                    tooltip: "Upload Gambar",
-                    onPressed: () async {
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? image = await picker.pickImage(
-                        source: ImageSource.gallery,
-                      );
-                      if (image != null) {
-                        urlController.text = image.path;
-                      }
-                    },
-                  ),
-                ],
-              ),
-              TextField(
-                controller: keteranganController,
-                decoration: const InputDecoration(
-                  labelText: "Deskripsi (Misal: Tulisan HBD Budi)",
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 15),
-              TextField(
-                controller: hargaController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: "Harga (Misal: 150000)",
-                ),
-              ),
-              const SizedBox(height: 15),
-              StatefulBuilder(
-                builder: (context, setStateSB) {
-                  return DropdownButtonFormField<String>(
-                    value: selectedStatus,
+                  const SizedBox(height: 12),
+
+                  // Harga Input Field
+                  TextField(
+                    controller: hargaController,
+                    keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: "Status Pesanan",
+                      labelText: "Harga",
+                      prefixText: "Rp ",
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Status Dropdown selector
+                  Row(
+                    children: [
+                      const Text("Status: ", style: TextStyle(fontSize: 16)),
+                      const SizedBox(width: 8),
+                      DropdownButton<String>(
+                        value: selectedStatus,
+                        underline: const SizedBox(),
+                        items: ['Baru', 'Proses', 'Selesai'].map((status) {
+                          return DropdownMenuItem<String>(
+                            value: status,
+                            child: _buildStatusBadge(status),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setStateSB(() {
+                              selectedStatus = value;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Gambar Desain Preview
+                  const Text("Gambar Desain:", style: TextStyle(fontSize: 16)),
+                  const SizedBox(height: 6),
+                  Builder(
+                    builder: (context) {
+                      String url = urlController.text.trim();
+                      if (url.isNotEmpty) {
+                        return Center(
+                          child: Container(
+                            height: 150,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: url.startsWith('http')
+                                ? Image.network(
+                                    url,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (c, o, s) => const Icon(Icons.broken_image, size: 50),
+                                  )
+                                : Image.file(
+                                    File(url),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (c, o, s) => const Icon(Icons.broken_image, size: 50),
+                                  ),
+                          ),
+                        );
+                      } else {
+                        return Center(
+                          child: Container(
+                            height: 150,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey.shade300),
+                              color: Colors.grey.shade100,
+                            ),
+                            child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                          ),
+                        );
+                      }
+                    }
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Link/URL Desain Row
+                  const Text("Link/URL Desain:", style: TextStyle(fontSize: 16)),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: urlController,
+                          decoration: const InputDecoration(
+                            hintText: "Upload atau masukkan link URL",
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.paste, color: Colors.blue),
+                        tooltip: "Paste Link",
+                        onPressed: () async {
+                          ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+                          if (data != null && data.text != null) {
+                            urlController.text = data.text!;
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.upload_file, color: Colors.brown),
+                        tooltip: "Upload Gambar",
+                        onPressed: () async {
+                          final ImagePicker picker = ImagePicker();
+                          final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            urlController.text = image.path;
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  // Clickable url underneath
+                  Builder(
+                    builder: (context) {
+                      String url = urlController.text.trim();
+                      if (url.isNotEmpty) {
+                        bool isFile =
+                            url.startsWith('/') ||
+                            url.startsWith('file://') ||
+                            url.startsWith('content://') ||
+                            url.startsWith('C:');
+
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: InkWell(
+                            onTap: () async {
+                              if (!isFile) {
+                                String launchUriStr = url.startsWith('http') ? url : 'https://$url';
+                                final uri = Uri.parse(launchUriStr);
+                                try {
+                                  await launchUrl(
+                                    uri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                } catch (e) {
+                                  debugPrint("Tidak dapat membuka URL: $e");
+                                }
+                              }
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Text(
+                                url,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isFile ? Colors.black87 : Colors.blue,
+                                  decoration: isFile ? TextDecoration.none : TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      } else {
+                        return const SizedBox.shrink();
+                      }
+                    }
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Deskripsi
+                  TextField(
+                    controller: keteranganController,
+                    decoration: const InputDecoration(
+                      labelText: "Deskripsi",
                       border: OutlineInputBorder(),
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 'Baru', child: Text('Baru')),
-                      DropdownMenuItem(value: 'Proses', child: Text('Proses')),
-                      DropdownMenuItem(value: 'Selesai', child: Text('Selesai')),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setStateSB(() => selectedStatus = value);
-                      }
-                    },
-                  );
-                },
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Waktu Upload
+                  if (isEdit) ...[
+                    Text(
+                      "Waktu Upload: ${desain.tanggalUpload ?? '-'}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
         actions: [
           TextButton(
@@ -730,17 +910,75 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
             onPressed: () async {
-              String finalKeterangan = keteranganController.text;
-              if (hargaController.text.isNotEmpty) {
+              String finalKeterangan = "";
+              if (isEdit && desain.keterangan != null) {
+                finalKeterangan = desain.keterangan!;
+                // Update Deskripsi:
+                if (finalKeterangan.contains("Deskripsi:")) {
+                  var lines = finalKeterangan.split('\n');
+                  bool found = false;
+                  for (int i = 0; i < lines.length; i++) {
+                    if (lines[i].startsWith("Deskripsi:")) {
+                      lines[i] = "Deskripsi: ${keteranganController.text}";
+                      found = true;
+                    }
+                  }
+                  if (found) {
+                    finalKeterangan = lines.join('\n');
+                  } else {
+                    if (finalKeterangan.contains(" . Deskripsi:")) {
+                      var parts = finalKeterangan.split(" . ");
+                      for (int i = 0; i < parts.length; i++) {
+                        if (parts[i].startsWith("Deskripsi:")) {
+                          parts[i] = "Deskripsi: ${keteranganController.text}";
+                        }
+                      }
+                      finalKeterangan = parts.join(" . ");
+                    }
+                  }
+                } else {
+                  if (finalKeterangan.startsWith("Template Kue Custom:")) {
+                    finalKeterangan += " . Deskripsi: ${keteranganController.text}";
+                  } else {
+                    finalKeterangan += "\nDeskripsi: ${keteranganController.text}";
+                  }
+                }
+
+                // Update Harga:
                 if (finalKeterangan.contains("Harga:")) {
                   var lines = finalKeterangan.split('\n');
+                  bool found = false;
                   for (int i = 0; i < lines.length; i++) {
                     if (lines[i].startsWith("Harga:")) {
                       lines[i] = "Harga: ${hargaController.text}";
+                      found = true;
                     }
                   }
-                  finalKeterangan = lines.join('\n');
+                  if (found) {
+                    finalKeterangan = lines.join('\n');
+                  } else {
+                    if (finalKeterangan.contains(" . Harga:")) {
+                      var parts = finalKeterangan.split(" . ");
+                      for (int i = 0; i < parts.length; i++) {
+                        if (parts[i].startsWith("Harga:")) {
+                          parts[i] = "Harga: ${hargaController.text}";
+                        }
+                      }
+                      finalKeterangan = parts.join(" . ");
+                    }
+                  }
                 } else {
+                  if (hargaController.text.isNotEmpty) {
+                    if (finalKeterangan.startsWith("Template Kue Custom:")) {
+                      finalKeterangan += " . Harga: ${hargaController.text}";
+                    } else {
+                      finalKeterangan += "\nHarga: ${hargaController.text}";
+                    }
+                  }
+                }
+              } else {
+                finalKeterangan = "Kategori: Kue Custom\nNama Produk: $namaProduk\nDeskripsi: ${keteranganController.text}";
+                if (hargaController.text.isNotEmpty) {
                   finalKeterangan += "\nHarga: ${hargaController.text}";
                 }
               }
