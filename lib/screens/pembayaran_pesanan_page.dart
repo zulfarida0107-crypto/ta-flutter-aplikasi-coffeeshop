@@ -114,27 +114,54 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
               ),
               const SizedBox(height: 12),
 
-              const Text(
-                "Daftar Item Menu:",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              ...items.map((item) {
-                final name = item['namaProduk'] ?? item['name'] ?? '-';
-                final qty = item['qty'] ?? item['quantity'] ?? 1;
-                final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4.0),
-                  child: Text(
-                    "- $name x$qty (Rp ${formatRupiah(subtotal)})",
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                );
+              Builder(builder: (context) {
+                List<dynamic> menuItems = items.where((it) => it['bagian'] == 'Menu Kami').toList();
+                List<dynamic> produkItems = items.where((it) => it['bagian'] == 'Produk Unggulan').toList();
+                List<Widget> widgets = [];
+                if (menuItems.isNotEmpty) {
+                  widgets.add(Text("Daftar Item Menu:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, color: Colors.brown.shade700)));
+                  widgets.add(const SizedBox(height: 8));
+                  for (var item in menuItems) {
+                    final name = item['namaProduk'] ?? item['name'] ?? '-';
+                    final qty = item['qty'] ?? item['quantity'] ?? 1;
+                    final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
+                    widgets.add(Padding(
+                      padding: const EdgeInsets.only(bottom: 4.0),
+                      child: Text("- $name x$qty (Rp ${formatRupiah(subtotal)})", style: const TextStyle(fontSize: 14)),
+                    ));
+                  }
+                  widgets.add(const SizedBox(height: 12));
+                }
+                if (produkItems.isNotEmpty) {
+                  widgets.add(Text("Daftar Item Produk:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, color: Colors.brown.shade700)));
+                  widgets.add(const SizedBox(height: 8));
+                  for (var item in produkItems) {
+                    final name = item['namaProduk'] ?? item['name'] ?? '-';
+                    final qty = item['qty'] ?? item['quantity'] ?? 1;
+                    final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
+                    widgets.add(Padding(
+                      padding: const EdgeInsets.only(bottom: 4.0),
+                      child: Text("- $name x$qty (Rp ${formatRupiah(subtotal)})", style: const TextStyle(fontSize: 14)),
+                    ));
+                  }
+                  widgets.add(const SizedBox(height: 12));
+                }
+                // Fallback for legacy items without 'bagian'
+                List<dynamic> legacyItems = items.where((it) => it['bagian'] == null || (it['bagian'] != 'Menu Kami' && it['bagian'] != 'Produk Unggulan')).toList();
+                if (legacyItems.isNotEmpty) {
+                  widgets.add(Text("Daftar Item Menu:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, color: Colors.brown.shade700)));
+                  widgets.add(const SizedBox(height: 8));
+                  for (var item in legacyItems) {
+                    final name = item['namaProduk'] ?? item['name'] ?? '-';
+                    final qty = item['qty'] ?? item['quantity'] ?? 1;
+                    final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
+                    widgets.add(Padding(
+                      padding: const EdgeInsets.only(bottom: 4.0),
+                      child: Text("- $name x$qty (Rp ${formatRupiah(subtotal)})", style: const TextStyle(fontSize: 14)),
+                    ));
+                  }
+                }
+                return Column(crossAxisAlignment: CrossAxisAlignment.start, children: widgets);
               }),
 
               const Divider(height: 30, thickness: 1),
@@ -205,12 +232,26 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
   }
 
   void _showDesainDetailOnlyDialog(PaymentItem item) {
-    List<dynamic> items = [];
-    try {
-      if (item.pesanan.detailPesanan.isNotEmpty && item.pesanan.detailPesanan != '[]') {
-        items = jsonDecode(item.pesanan.detailPesanan);
+    String extNama = "Kue Custom";
+    String extDeskripsi = item.desain!.keterangan ?? "";
+    String extHarga = "0";
+
+    String raw = item.desain!.keterangan ?? "";
+    if (raw.contains("Nama Produk:")) {
+      for (var line in raw.split('\n')) {
+        if (line.startsWith("Nama Produk:")) extNama = line.replaceAll("Nama Produk:", "").trim();
+        if (line.startsWith("Deskripsi:")) extDeskripsi = line.replaceAll("Deskripsi:", "").trim();
+        if (line.startsWith("Harga:")) extHarga = line.replaceAll("Harga:", "").trim();
       }
-    } catch (_) {}
+    } else if (raw.contains("Template Kue Custom:")) {
+      var parts = raw.split("Template Kue Custom:")[1].split(".");
+      if (parts.isNotEmpty) {
+        extNama = parts[0].trim();
+        if (parts.length > 1) extDeskripsi = parts.sublist(1).join(".").trim();
+      }
+    }
+
+    num valHarga = num.tryParse(extHarga) ?? 0;
 
     showDialog(
       context: context,
@@ -234,19 +275,33 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Pelanggan: ${item.pesanan.namaPelanggan}",
+                  "ID Pesanan: ${item.desain!.id}",
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                if (item.desain!.keterangan != null && item.desain!.keterangan!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    "Deskripsi Desain: ${item.desain!.keterangan}",
-                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                const SizedBox(height: 8),
+                Text(
+                  "Nama Produk: $extNama",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Kategori: Kue Custom",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Deskripsi: $extDeskripsi",
+                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                ),
                 if (item.desain!.fileDesainUrl != null && item.desain!.fileDesainUrl!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   const Text(
@@ -276,28 +331,7 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
-                const Text(
-                  "Daftar Item Menu:",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
                 const SizedBox(height: 8),
-                ...items.map((menuItem) {
-                  final name = menuItem['namaProduk'] ?? menuItem['name'] ?? '-';
-                  final qty = menuItem['qty'] ?? menuItem['quantity'] ?? 1;
-                  final subtotal = menuItem['subtotal'] ?? (((menuItem['harga'] ?? menuItem['price'] ?? 0) as num) * (qty as num));
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 4.0),
-                    child: Text(
-                      "- $name x$qty (Rp ${formatRupiah(subtotal)})",
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  );
-                }),
                 const Divider(height: 30, thickness: 1),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -332,7 +366,7 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                 ),
                 const SizedBox(height: 15),
                 Text(
-                  "TOTAL BAYAR: Rp ${formatRupiah(item.pesanan.totalHarga)}",
+                  "TOTAL BAYAR: Rp ${formatRupiah(valHarga)}",
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF6D4C41),
@@ -401,13 +435,41 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    "Pelanggan: ${item.pesanan.namaPelanggan}",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  if (item.isDesain) ...[
+                    Builder(
+                      builder: (context) {
+                        String extNama = "Kue Custom";
+                        String raw = item.desain!.keterangan ?? "";
+                        if (raw.contains("Nama Produk:")) {
+                          for (var line in raw.split('\n')) {
+                            if (line.startsWith("Nama Produk:")) extNama = line.replaceAll("Nama Produk:", "").trim();
+                          }
+                        } else if (raw.contains("Template Kue Custom:")) {
+                          var parts = raw.split("Template Kue Custom:")[1].split(".");
+                          if (parts.isNotEmpty) extNama = parts[0].trim();
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "ID Pesanan: ${item.desain!.id}",
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Nama Produk: $extNama",
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        );
+                      }
                     ),
-                  ),
+                  ] else ...[
+                    Text(
+                      "Pelanggan: ${item.pesanan.namaPelanggan}",
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ],
                   if (item.isDesain && item.desain!.keterangan != null && item.desain!.keterangan!.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
@@ -415,28 +477,58 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                       style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
                     ),
                   ],
-                  const SizedBox(height: 12),
-                  const Text(
-                    "Daftar Item Menu:",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...items.map((menuItem) {
-                    final name = menuItem['namaProduk'] ?? menuItem['name'] ?? '-';
-                    final qty = menuItem['qty'] ?? menuItem['quantity'] ?? 1;
-                    final subtotal = menuItem['subtotal'] ?? (((menuItem['harga'] ?? menuItem['price'] ?? 0) as num) * (qty as num));
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 4.0),
-                      child: Text(
-                        "- $name x$qty (Rp ${formatRupiah(subtotal)})",
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    );
-                  }),
+                  if (!item.isDesain) ...[
+                    const SizedBox(height: 12),
+                    Builder(builder: (context) {
+                      List<dynamic> menuItems = items.where((it) => it['bagian'] == 'Menu Kami').toList();
+                      List<dynamic> produkItems = items.where((it) => it['bagian'] == 'Produk Unggulan').toList();
+                      List<Widget> widgets = [];
+                      if (menuItems.isNotEmpty) {
+                        widgets.add(Text("Daftar Item Menu:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, color: Colors.brown.shade700)));
+                        widgets.add(const SizedBox(height: 8));
+                        for (var it in menuItems) {
+                          final name = it['namaProduk'] ?? it['name'] ?? '-';
+                          final qty = it['qty'] ?? it['quantity'] ?? 1;
+                          final subtotal = it['subtotal'] ?? (((it['harga'] ?? it['price'] ?? 0) as num) * (qty as num));
+                          widgets.add(Padding(
+                            padding: const EdgeInsets.only(bottom: 4.0),
+                            child: Text("- $name x$qty (Rp ${formatRupiah(subtotal)})", style: const TextStyle(fontSize: 14)),
+                          ));
+                        }
+                        widgets.add(const SizedBox(height: 12));
+                      }
+                      if (produkItems.isNotEmpty) {
+                        widgets.add(Text("Daftar Item Produk:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, color: Colors.brown.shade700)));
+                        widgets.add(const SizedBox(height: 8));
+                        for (var it in produkItems) {
+                          final name = it['namaProduk'] ?? it['name'] ?? '-';
+                          final qty = it['qty'] ?? it['quantity'] ?? 1;
+                          final subtotal = it['subtotal'] ?? (((it['harga'] ?? it['price'] ?? 0) as num) * (qty as num));
+                          widgets.add(Padding(
+                            padding: const EdgeInsets.only(bottom: 4.0),
+                            child: Text("- $name x$qty (Rp ${formatRupiah(subtotal)})", style: const TextStyle(fontSize: 14)),
+                          ));
+                        }
+                        widgets.add(const SizedBox(height: 12));
+                      }
+                      // Fallback for legacy items without 'bagian'
+                      List<dynamic> legacyItems = items.where((it) => it['bagian'] == null || (it['bagian'] != 'Menu Kami' && it['bagian'] != 'Produk Unggulan')).toList();
+                      if (legacyItems.isNotEmpty) {
+                        widgets.add(Text("Daftar Item Menu:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, color: Colors.brown.shade700)));
+                        widgets.add(const SizedBox(height: 8));
+                        for (var it in legacyItems) {
+                          final name = it['namaProduk'] ?? it['name'] ?? '-';
+                          final qty = it['qty'] ?? it['quantity'] ?? 1;
+                          final subtotal = it['subtotal'] ?? (((it['harga'] ?? it['price'] ?? 0) as num) * (qty as num));
+                          widgets.add(Padding(
+                            padding: const EdgeInsets.only(bottom: 4.0),
+                            child: Text("- $name x$qty (Rp ${formatRupiah(subtotal)})", style: const TextStyle(fontSize: 14)),
+                          ));
+                        }
+                      }
+                      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: widgets);
+                    }),
+                  ],
                   const Divider(height: 30, thickness: 1),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -634,17 +726,50 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
                         color: Colors.brown[700],
                       ),
                     ),
-                    title: Text(
-                      item.isDesain 
-                          ? "${item.pesanan.namaPelanggan} (Kue Custom)" 
-                          : item.pesanan.namaPelanggan,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    title: Builder(
+                      builder: (context) {
+                        if (item.isDesain) {
+                          String extNama = "Kue Custom";
+                          String raw = item.desain!.keterangan ?? "";
+                          if (raw.contains("Nama Produk:")) {
+                            for (var line in raw.split('\n')) {
+                              if (line.startsWith("Nama Produk:")) extNama = line.replaceAll("Nama Produk:", "").trim();
+                            }
+                          } else if (raw.contains("Template Kue Custom:")) {
+                            var parts = raw.split("Template Kue Custom:")[1].split(".");
+                            if (parts.isNotEmpty) extNama = parts[0].trim();
+                          }
+                          return Text(
+                            "ID Pesanan: ${item.desain!.id} - $extNama",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          );
+                        } else {
+                          return Text(
+                            item.pesanan.namaPelanggan,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          );
+                        }
+                      }
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Total Tagihan: Rp ${formatRupiah(item.pesanan.totalHarga)}",
+                        Builder(
+                          builder: (context) {
+                            if (item.isDesain) {
+                              String extHarga = "0";
+                              String raw = item.desain!.keterangan ?? "";
+                              if (raw.contains("Harga:")) {
+                                for (var line in raw.split('\n')) {
+                                  if (line.startsWith("Harga:")) extHarga = line.replaceAll("Harga:", "").trim();
+                                }
+                              }
+                              num val = num.tryParse(extHarga) ?? 0;
+                              return Text("Total Bayar: Rp ${formatRupiah(val)}");
+                            } else {
+                              return Text("Total Bayar: Rp ${formatRupiah(item.pesanan.totalHarga)}");
+                            }
+                          }
                         ),
                         const SizedBox(height: 4),
                         _buildStatusTag(item.isDesain ? item.desain!.statusPesanan : item.pesanan.statusPesanan),

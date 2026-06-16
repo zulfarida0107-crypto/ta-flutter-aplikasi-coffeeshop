@@ -285,26 +285,55 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                     style: const TextStyle(fontSize: 16, color: Colors.black87),
                   ),
                 ] else ...[
-                  const Text(
-                    "Daftar Item Menu:",
-                    style: TextStyle(
-                      fontSize: 16,
-                      decoration: TextDecoration.underline,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...items.map((item) {
-                    final name = item['namaProduk'] ?? item['name'] ?? '-';
-                    final qty = item['qty'] ?? item['quantity'] ?? 1;
-                    final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6.0),
-                      child: Text(
-                        "- $name x$qty (Rp ${formatRupiah(subtotal)})",
-                        style: const TextStyle(fontSize: 16, color: Colors.black87),
-                      ),
-                    );
+                  Builder(builder: (context) {
+                    List<dynamic> menuItems = items.where((it) => it['bagian'] == 'Menu Kami').toList();
+                    List<dynamic> produkItems = items.where((it) => it['bagian'] == 'Produk Unggulan').toList();
+                    List<Widget> widgets = [];
+                    if (menuItems.isNotEmpty) {
+                      widgets.add(Text("Daftar Item Menu:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, color: Colors.brown.shade700)));
+                      widgets.add(const SizedBox(height: 8));
+                      for (var item in menuItems) {
+                        final name = item['namaProduk'] ?? item['name'] ?? '-';
+                        final qty = item['qty'] ?? item['quantity'] ?? 1;
+                        final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
+                        widgets.add(Padding(
+                          padding: const EdgeInsets.only(bottom: 6.0),
+                          child: Text("- $name x$qty (Rp ${formatRupiah(subtotal)})", style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                        ));
+                      }
+                      widgets.add(const SizedBox(height: 12));
+                    }
+                    if (produkItems.isNotEmpty) {
+                      widgets.add(Text("Daftar Item Produk:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, color: Colors.brown.shade700)));
+                      widgets.add(const SizedBox(height: 8));
+                      for (var item in produkItems) {
+                        final name = item['namaProduk'] ?? item['name'] ?? '-';
+                        final qty = item['qty'] ?? item['quantity'] ?? 1;
+                        final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
+                        widgets.add(Padding(
+                          padding: const EdgeInsets.only(bottom: 6.0),
+                          child: Text("- $name x$qty (Rp ${formatRupiah(subtotal)})", style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                        ));
+                      }
+                      widgets.add(const SizedBox(height: 12));
+                    }
+                    
+                    // Fallback for legacy items without 'bagian'
+                    List<dynamic> legacyItems = items.where((it) => it['bagian'] == null || (it['bagian'] != 'Menu Kami' && it['bagian'] != 'Produk Unggulan')).toList();
+                    if (legacyItems.isNotEmpty) {
+                      widgets.add(Text("Daftar Item Menu:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, color: Colors.brown.shade700)));
+                      widgets.add(const SizedBox(height: 8));
+                      for (var item in legacyItems) {
+                        final name = item['namaProduk'] ?? item['name'] ?? '-';
+                        final qty = item['qty'] ?? item['quantity'] ?? 1;
+                        final subtotal = item['subtotal'] ?? (((item['harga'] ?? item['price'] ?? 0) as num) * (qty as num));
+                        widgets.add(Padding(
+                          padding: const EdgeInsets.only(bottom: 6.0),
+                          child: Text("- $name x$qty (Rp ${formatRupiah(subtotal)})", style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                        ));
+                      }
+                    }
+                    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: widgets);
                   }),
                 ],
                 const SizedBox(height: 8),
@@ -583,9 +612,9 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                                               );
                                               setStateSB(() {
                                                 item['idProduk'] = val;
-                                                item['namaProduk'] =
-                                                    sel.namaProduk;
+                                                item['namaProduk'] = sel.namaProduk;
                                                 item['harga'] = sel.harga;
+                                                item['bagian'] = sel.bagian;
                                                 hitungTotal(setStateSB);
                                               });
                                             }
@@ -749,9 +778,9 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
                                               );
                                               setStateSB(() {
                                                 item['idProduk'] = val;
-                                                item['namaProduk'] =
-                                                    sel.namaProduk;
+                                                item['namaProduk'] = sel.namaProduk;
                                                 item['harga'] = sel.harga;
+                                                item['bagian'] = sel.bagian;
                                                 hitungTotal(setStateSB);
                                               });
                                             }

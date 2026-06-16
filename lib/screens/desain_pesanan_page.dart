@@ -152,7 +152,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
                           children: [
                             if (extDeskripsi.isNotEmpty) ...[
                               const SizedBox(height: 4),
-                              Text(extDeskripsi, style: const TextStyle(color: Colors.grey)),
+                              Text(extDeskripsi, style: TextStyle(color: Colors.brown.shade700)),
                             ],
                             const SizedBox(height: 4),
                             _buildStatusBadge(desain.statusPesanan),
@@ -409,6 +409,23 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
+            Builder(
+              builder: (context) {
+                String extHarga = "-";
+                if (desain.keterangan != null && desain.keterangan!.contains("Harga:")) {
+                  for (var line in desain.keterangan!.split('\n')) {
+                    if (line.startsWith("Harga:")) {
+                      extHarga = line.replaceAll("Harga:", "").trim();
+                    }
+                  }
+                }
+                return Text(
+                  "Harga: Rp $extHarga",
+                  style: const TextStyle(fontSize: 16),
+                );
+              }
+            ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 const Text("Status: ", style: TextStyle(fontSize: 16)),
@@ -525,6 +542,16 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
     TextEditingController keteranganController = TextEditingController(
       text: isEdit ? desain.keterangan : "",
     );
+
+    String extHarga = "";
+    if (isEdit && desain.keterangan != null && desain.keterangan!.contains("Harga:")) {
+      for (var line in desain.keterangan!.split('\n')) {
+        if (line.startsWith("Harga:")) {
+          extHarga = line.replaceAll("Harga:", "").trim();
+        }
+      }
+    }
+    TextEditingController hargaController = TextEditingController(text: extHarga);
 
     String selectedStatus = "Baru";
     if (isEdit) {
@@ -643,6 +670,14 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
                 maxLines: 2,
               ),
               const SizedBox(height: 15),
+              TextField(
+                controller: hargaController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: "Harga (Misal: 150000)",
+                ),
+              ),
+              const SizedBox(height: 15),
               StatefulBuilder(
                 builder: (context, setStateSB) {
                   return DropdownButtonFormField<String>(
@@ -675,6 +710,21 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
             onPressed: () async {
+              String finalKeterangan = keteranganController.text;
+              if (hargaController.text.isNotEmpty) {
+                if (finalKeterangan.contains("Harga:")) {
+                  var lines = finalKeterangan.split('\n');
+                  for (int i = 0; i < lines.length; i++) {
+                    if (lines[i].startsWith("Harga:")) {
+                      lines[i] = "Harga: ${hargaController.text}";
+                    }
+                  }
+                  finalKeterangan = lines.join('\n');
+                } else {
+                  finalKeterangan += "\nHarga: ${hargaController.text}";
+                }
+              }
+
               String tanggalSekarang =
                   DateTime.now().toString().substring(0, 16);
 
@@ -682,7 +732,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
                 id: isEdit ? desain.id : 0,
                 idPesanan: isEdit ? desain.idPesanan : 0,
                 fileDesainUrl: urlController.text,
-                keterangan: keteranganController.text,
+                keterangan: finalKeterangan,
                 tanggalUpload: isEdit ? desain.tanggalUpload : tanggalSekarang,
                 statusPesanan: selectedStatus,
               );
