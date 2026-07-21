@@ -1,22 +1,48 @@
-<<<<<<< HEAD
-# flutter_coffeeshop
+# Classic Coffee Admin & Cashier App
 
-A new Flutter project.
+Classic Coffee Admin & Cashier App — A cross-platform Flutter application tailored for administrators and employees, facilitating live order queue processing, custom cake reviews, and transaction updates.
 
-## Getting Started
+## Fitur Utama
 
-This project is a starting point for a Flutter application.
+- **Manajemen User:** Pengelolaan data karyawan dan admin secara langsung (tambah, edit, hapus) dengan pembatasan hak akses.
+- **Daftar Menu Produk:** Pengelolaan data menu kopi, non-kopi, dan pastry (tambah, edit, hapus).
+- **Proses Antrean Pesanan:** Pemantauan pesanan baru dari pelanggan yang masuk secara real-time.
+- **Desain Pesanan Kue Custom:** Tinjauan dan pengelolaan pesanan desain kue custom yang dikirim pelanggan.
+- **Konfirmasi Pembayaran:** Modul kasir untuk memverifikasi pembayaran pelanggan secara instan.
+- **Scroll Position Persistence:** Posisi scroll daftar data tetap bertahan dan tidak melompat ke atas saat melakukan refresh, penambahan, atau penghapusan data.
 
-A few resources to get you started if this is your first Flutter project:
+## Teknologi
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- **Framework:** Flutter (Dart)
+- **State & Data Persistence:** State Management Flutter, Integration Service
+- **Penyimpanan Lokal:** SQLite / Database Helper
+- **API Client:** HTTP Client terintegrasi dengan Spring Boot Server
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-=======
-# flutter-coffeeshop-1
-file asli yang dapat di running (DONE Version)
->>>>>>> 6ad8b3be9a9a164150685e826a0d4f22655b32b9
+## Panduan Instalasi & Menjalankan Project
+
+1. Pastikan Flutter SDK telah terinstal di komputer Anda.
+2. Hubungkan perangkat fisik Android atau jalankan Android Emulator.
+3. Clone repository ini ke dalam direktori lokal Anda.
+4. Jalankan perintah flutter pub get untuk mengunduh dependensi:
+   ```bash
+   flutter pub get
+   ```
+5. Jalankan aplikasi di emulator atau perangkat yang aktif:
+   ```bash
+   flutter run
+   ```
+
+---
+
+## Dokumentasi & Demo
+
+Gunakan kolom di bawah ini untuk menambahkan tangkapan layar (screenshot), animasi GIF, atau video dokumentasi aplikasi Anda.
+
+| Fitur | Tampilan Dokumentasi | Deskripsi |
+| --- | --- | --- |
+| **Halaman Login** | *(Masukkan gambar di sini)* | Halaman masuk aplikasi untuk Admin dan Karyawan. |
+| **Dashboard Menu Utama** | *(Masukkan gambar di sini)* | Halaman utama yang berisi opsi navigasi manajemen aplikasi. |
+| **Daftar Menu Produk** | *(Masukkan gambar di sini)* | Manajemen data produk kopi, non-kopi, dan kue. |
+| **Daftar Pesanan Masuk** | *(Masukkan gambar di sini)* | Antrean pesanan pelanggan reguler yang masuk ke sistem. |
+| **Desain Pesanan Custom** | *(Masukkan gambar di sini)* | Daftar pesanan kue custom yang dikirim oleh pelanggan. |
+| **Konfirmasi Pembayaran** | *(Masukkan gambar di sini)* | Modul kasir untuk melakukan verifikasi pembayaran pesanan. |
