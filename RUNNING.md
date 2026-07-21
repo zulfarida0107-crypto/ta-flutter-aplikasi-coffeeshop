@@ -35,3 +35,5 @@ Saat aplikasi sedang berjalan di terminal, Anda dapat menggunakan tombol berikut
 * Tekan **`R`** (huruf kapital): **Hot Restart** (Memuat ulang aplikasi secara penuh dari awal).
 * Tekan **`q`** : Keluar / Menghentikan berjalannya aplikasi.
 * Tekan **`h`** : Menampilkan daftar opsi lengkap di terminal.
+
+
