@@ -42,7 +42,39 @@ Aplikasi Flutter ini memiliki modul CRUD (Create, Read, Update, Delete) yang ter
 - **Penyimpanan Lokal:** SQLite / Database Helper
 - **API Client:** HTTP Client terintegrasi dengan Spring Boot Server
 
+## Arsitektur Docker (Backend & Web)
+
+Sistem pendukung untuk aplikasi ini (Backend dan Frontend Web) telah dikontainerisasi menggunakan **Docker**. Sistem berjalan di atas tiga container utama yang saling terhubung:
+
+1. **`ta-database-coffeeshop`**: Container MySQL (Port `3307:3306`) yang menyimpan seluruh data aplikasi.
+2. **`ta-server-coffeeshop`**: Container backend Spring Boot (Port `8083:8083`) yang dihubungkan dengan aplikasi Flutter melalui API.
+3. **`ta-ci4-web-coffeeshop`**: Container frontend CodeIgniter 4 (Port `8080:80`) untuk pelanggan.
+
+Dengan `docker-compose`, seluruh environment pendukung aplikasi Flutter ini dapat dibangun (build) dan dijalankan secara serentak.
+
 ## Panduan Instalasi & Menjalankan Project
+
+Sebelum menjalankan aplikasi Flutter, pastikan Server dan Web sudah berjalan menggunakan Docker.
+
+### A. Menjalankan Server & Web (menggunakan Docker)
+
+Buka **Command Prompt (CMD)**, lalu ketik perintah ini:
+
+```cmd
+cd C:\Dokumen
+docker compose up -d --build
+```
+
+> **Penjelasan Perintah:**
+> - `cd C:\Dokumen` $\rightarrow$ Pindah ke folder lokasi Master Docker.
+> - `up -d` $\rightarrow$ Menyalakan seluruh container di background (agar CMD tidak terkunci).
+> - `--build` $\rightarrow$ Memastikan Docker mem-build versi kode terbaru dari Web & Server Anda.
+
+- Cek Status Container: `docker compose ps`
+- Melihat Log Server (Real-time): `docker compose logs -f`
+- Mematikan Sistem: `docker compose down`
+
+### B. Menjalankan Aplikasi Flutter
 
 1. Pastikan Flutter SDK telah terinstal di komputer Anda.
 2. Hubungkan perangkat fisik Android atau jalankan Android Emulator.
@@ -89,3 +121,6 @@ Berikut adalah visualisasi antarmuka aplikasi Flutter pada emulator Android:
 | **Daftar Pesan Masuk** | ![Pesan Masuk](documentation/pesan_masuk.png) | Daftar review pesan masuk/masukan dari pelanggan. |
 | **Konfirmasi Pembayaran** | ![Konfirmasi Pembayaran](documentation/konfirmasi_pembayaran.png) | Modul kasir untuk melakukan verifikasi pembayaran pesanan. |
 | **Cuplikan Kode Injeksi JWT (ApiService)** | ![JWT Snippet](documentation/snippet_jwt_flutter.png) | Algoritma Dart yang membaca token JWT dari memori lalu menyisipkannya ke header Bearer setiap request API. |
+| **Docker Build & Up** | ![Docker Build](documentation/docker_build.png) | Proses kompilasi image dan inisialisasi container secara serentak menggunakan `docker compose up -d --build`. |
+| **Status Container (CLI)** | ![Docker PS](documentation/docker_ps.png) | Verifikasi container yang berjalan (Web, Server, DB) beserta port mapping-nya melalui `docker compose ps`. |
+| **Docker Desktop UI** | ![Docker Desktop](documentation/docker_desktop.png) | Tampilan manajemen visual container, resource usage, dan logs melalui Docker Desktop. |
