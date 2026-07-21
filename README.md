@@ -80,10 +80,11 @@ Berikut adalah visualisasi antarmuka aplikasi Flutter pada emulator Android:
 
 | Fitur | Tampilan Dokumentasi | Deskripsi |
 | --- | --- | --- |
+| **Halaman Login** | ![Login](documentation/halaman_login.png) | Halaman masuk aplikasi untuk Admin dan Karyawan. |
 | **Dashboard Menu Utama** | ![Dashboard](documentation/dashboard_admin.png) | Halaman menu utama admin yang berisi opsi navigasi manajemen aplikasi. |
 | **Halaman Manajemen User** | ![Manajemen User](documentation/manajemen_user.png) | Antarmuka pengelolaan data akun karyawan dan level akses. |
 | **Daftar Menu Produk** | ![Daftar Menu](documentation/daftar_menu.png) | Antarmuka manajemen data produk kopi dan kue. |
-| **Daftar Pesanan Masuk** | ![Pesanan Masuk](documentation/pesanan_masuk.png) | Antrean data pesanan pelanggan reguler yang masuk ke sistem. |
+| **Daftar Pesanan Masuk** | ![Pesanan Masuk](documentation/antrean_pesanan.png) | Antrean data pesanan pelanggan reguler yang masuk ke sistem. |
 | **Desain Pesanan Custom** | ![Desain Custom](documentation/desain_custom.png) | Daftar review desain kue custom yang dikirim pelanggan. |
-| **Halaman Login** | *(Masukkan gambar di sini)* | Halaman masuk aplikasi untuk Admin dan Karyawan. |
-| **Konfirmasi Pembayaran** | *(Masukkan gambar di sini)* | Modul kasir untuk melakukan verifikasi pembayaran pesanan. |
+| **Daftar Pesan Masuk** | ![Pesan Masuk](documentation/pesan_masuk.png) | Daftar review pesan masuk/masukan dari pelanggan. |
+| **Konfirmasi Pembayaran** | ![Konfirmasi Pembayaran](documentation/konfirmasi_pembayaran.png) | Modul kasir untuk melakukan verifikasi pembayaran pesanan. |
