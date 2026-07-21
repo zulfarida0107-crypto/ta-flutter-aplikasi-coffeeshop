@@ -88,3 +88,4 @@ Berikut adalah visualisasi antarmuka aplikasi Flutter pada emulator Android:
 | **Desain Pesanan Custom** | ![Desain Custom](documentation/desain_custom.png) | Daftar review desain kue custom yang dikirim pelanggan. |
 | **Daftar Pesan Masuk** | ![Pesan Masuk](documentation/pesan_masuk.png) | Daftar review pesan masuk/masukan dari pelanggan. |
 | **Konfirmasi Pembayaran** | ![Konfirmasi Pembayaran](documentation/konfirmasi_pembayaran.png) | Modul kasir untuk melakukan verifikasi pembayaran pesanan. |
+| **Cuplikan Kode Injeksi JWT** | ![JWT ApiService](documentation/jwt_api_service.png) | Potongan kode Dart class ApiService yang secara otomatis menyisipkan token JWT Bearer ke setiap header request ke backend. |
