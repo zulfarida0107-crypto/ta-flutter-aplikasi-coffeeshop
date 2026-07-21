@@ -32,6 +32,22 @@ Classic Coffee Admin & Cashier App — A cross-platform Flutter application tail
    flutter run
    ```
 
+## Deployment / Rilis via GitHub
+
+Untuk mendistribusikan aplikasi Flutter (Android) melalui GitHub, Anda dapat membuat file rilis APK menggunakan fitur **GitHub Releases**:
+
+### Langkah Pembuatan Rilis APK
+1. Lakukan kompilasi aplikasi Flutter ke dalam mode rilis (release) untuk menghasilkan berkas APK:
+   ```bash
+   flutter build apk --release
+   ```
+2. Berkas APK hasil kompilasi akan tersimpan pada folder `build/app/outputs/flutter-apk/app-release.apk`.
+3. Buka halaman repository GitHub Anda, lalu pilih menu **Releases** di bagian kanan halaman.
+4. Klik **Create a new release** (atau Draft a new release).
+5. Tentukan tag versi baru (misalnya `v1.0.0`) dan judul rilis Anda.
+6. Unggah berkas `app-release.apk` tersebut ke kolom upload binary rilis yang tersedia.
+7. Klik **Publish release** untuk membagikan file instalasi APK kepada pengguna lain.
+
 ---
 
 ## Dokumentasi & Demo
