@@ -103,7 +103,7 @@ class _DesainPesananPageState extends State<DesainPesananPage> {
           ),
         ],
       ),
-      body: isLoading
+      body: isLoading && listDesain.isEmpty
           ? const Center(child: CircularProgressIndicator(color: Colors.brown))
           : listDesain.isEmpty
               ? const Center(

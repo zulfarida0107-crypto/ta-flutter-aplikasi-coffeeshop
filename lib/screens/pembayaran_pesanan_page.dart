@@ -747,7 +747,7 @@ class _PembayaranPesananPageState extends State<PembayaranPesananPage> {
           ),
         ],
       ),
-      body: isLoading
+      body: isLoading && listPembayaran.isEmpty
           ? const Center(child: CircularProgressIndicator(color: Colors.brown))
           : listPembayaran.isEmpty
           ? _buildEmptyState()

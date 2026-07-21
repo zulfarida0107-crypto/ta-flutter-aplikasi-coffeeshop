@@ -45,7 +45,7 @@ class _ManajemenUserPageState extends State<ManajemenUserPage> {
           ),
         ],
       ),
-      body: isLoading
+      body: isLoading && listUser.isEmpty
           ? const Center(child: CircularProgressIndicator(color: Colors.brown))
           : listUser.isEmpty
               ? const Center(child: Text("Belum ada user. Klik + untuk tambah!"))

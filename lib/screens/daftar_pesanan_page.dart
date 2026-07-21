@@ -65,7 +65,7 @@ class _DaftarPesananPageState extends State<DaftarPesananPage> {
           ),
         ],
       ),
-      body: isLoading
+      body: isLoading && listPesanan.isEmpty
           ? const Center(child: CircularProgressIndicator(color: Colors.brown))
           : listPesanan.isEmpty
               ? const Center(child: Text("Belum ada pesanan masuk."))

@@ -49,7 +49,7 @@ class _MenuProdukPageState extends State<MenuProdukPage> {
           ),
         ],
       ),
-      body: isLoading
+      body: isLoading && listMenu.isEmpty
           ? const Center(child: CircularProgressIndicator(color: Colors.brown))
           : listMenu.isEmpty
               ? const Center(child: Text("Belum ada menu. Klik + untuk tambah!"))

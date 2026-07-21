@@ -75,7 +75,7 @@ class _PesanKontakPageState extends State<PesanKontakPage> {
           ),
         ],
       ),
-      body: isLoading
+      body: isLoading && listPesan.isEmpty
           ? const Center(child: CircularProgressIndicator(color: Colors.brown))
           : listPesan.isEmpty
               ? const Center(
