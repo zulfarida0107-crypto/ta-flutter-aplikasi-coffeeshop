@@ -11,6 +11,30 @@ Classic Coffee Admin & Cashier App — A cross-platform Flutter application tail
 - **Konfirmasi Pembayaran:** Modul kasir untuk memverifikasi pembayaran pelanggan secara instan.
 - **Scroll Position Persistence:** Posisi scroll daftar data tetap bertahan dan tidak melompat ke atas saat melakukan refresh, penambahan, atau penghapusan data.
 
+## Keterangan Operasi CRUD
+
+Aplikasi Flutter ini memiliki modul CRUD (Create, Read, Update, Delete) yang terhubung ke server Spring Boot:
+
+1. **Modul Manajemen User (CRUD Lengkap):**
+   - **Create:** Menambahkan akun pengguna baru (nama, username, password, dan level akses).
+   - **Read:** Menampilkan daftar seluruh akun karyawan/admin pada sistem.
+   - **Update:** Memperbarui data pengguna (nama, username, password, atau hak akses).
+   - **Delete:** Menghapus akun pengguna secara permanen dari database.
+2. **Modul Daftar Menu Produk (CRUD Lengkap):**
+   - **Create:** Menambahkan produk kopi/kue baru (nama produk, kategori, bagian, harga, deskripsi).
+   - **Read:** Menampilkan daftar seluruh menu aktif yang tersedia untuk pelanggan.
+   - **Update:** Mengubah detail informasi produk (nama, harga, deskripsi, dll.).
+   - **Delete:** Menghapus menu produk secara permanen dari sistem.
+3. **Modul Antrean & Pembayaran Pesanan (Update & Read):**
+   - **Read:** Membaca data pesanan masuk dan status pembayaran pelanggan.
+   - **Update:** Mengubah status pengerjaan pesanan (dari baru ke proses/selesai) dan memverifikasi pembayaran transaksi.
+   - **Delete:** Menghapus data pesanan dari daftar antrean jika dibatalkan.
+4. **Modul Desain Pesanan Kue Custom (CRUD Lengkap):**
+   - **Create:** Membuat data pemesanan desain baru.
+   - **Read:** Menampilkan daftar kiriman desain kue custom dari pelanggan.
+   - **Update:** Memperbarui detail status pengerjaan desain kue custom.
+   - **Delete:** Menghapus data desain dari daftar review.
+
 ## Teknologi
 
 - **Framework:** Flutter (Dart)
@@ -52,13 +76,14 @@ Untuk mendistribusikan aplikasi Flutter (Android) melalui GitHub, Anda dapat mem
 
 ## Dokumentasi & Demo
 
-Gunakan kolom di bawah ini untuk menambahkan tangkapan layar (screenshot), animasi GIF, atau video dokumentasi aplikasi Anda.
+Berikut adalah visualisasi antarmuka aplikasi Flutter pada emulator Android:
 
 | Fitur | Tampilan Dokumentasi | Deskripsi |
 | --- | --- | --- |
+| **Dashboard Menu Utama** | ![Dashboard](documentation/dashboard_admin.png) | Halaman menu utama admin yang berisi opsi navigasi manajemen aplikasi. |
+| **Halaman Manajemen User** | ![Manajemen User](documentation/manajemen_user.png) | Antarmuka pengelolaan data akun karyawan dan level akses. |
+| **Daftar Menu Produk** | ![Daftar Menu](documentation/daftar_menu.png) | Antarmuka manajemen data produk kopi dan kue. |
+| **Daftar Pesanan Masuk** | ![Pesanan Masuk](documentation/pesanan_masuk.png) | Antrean data pesanan pelanggan reguler yang masuk ke sistem. |
+| **Desain Pesanan Custom** | ![Desain Custom](documentation/desain_custom.png) | Daftar review desain kue custom yang dikirim pelanggan. |
 | **Halaman Login** | *(Masukkan gambar di sini)* | Halaman masuk aplikasi untuk Admin dan Karyawan. |
-| **Dashboard Menu Utama** | *(Masukkan gambar di sini)* | Halaman utama yang berisi opsi navigasi manajemen aplikasi. |
-| **Daftar Menu Produk** | *(Masukkan gambar di sini)* | Manajemen data produk kopi, non-kopi, dan kue. |
-| **Daftar Pesanan Masuk** | *(Masukkan gambar di sini)* | Antrean pesanan pelanggan reguler yang masuk ke sistem. |
-| **Desain Pesanan Custom** | *(Masukkan gambar di sini)* | Daftar pesanan kue custom yang dikirim oleh pelanggan. |
 | **Konfirmasi Pembayaran** | *(Masukkan gambar di sini)* | Modul kasir untuk melakukan verifikasi pembayaran pesanan. |
