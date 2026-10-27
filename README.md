@@ -2,125 +2,125 @@
 
 Classic Coffee Admin & Cashier App — A cross-platform Flutter application tailored for administrators and employees, facilitating live order queue processing, custom cake reviews, and transaction updates.
 
-## Fitur Utama
+## Main Features
 
-- **Manajemen User:** Pengelolaan data karyawan dan admin secara langsung (tambah, edit, hapus) dengan pembatasan hak akses.
-- **Daftar Menu Produk:** Pengelolaan data menu kopi, non-kopi, dan pastry (tambah, edit, hapus).
-- **Proses Antrean Pesanan:** Pemantauan pesanan baru dari pelanggan yang masuk secara real-time.
-- **Desain Pesanan Kue Custom:** Tinjauan dan pengelolaan pesanan desain kue custom yang dikirim pelanggan.
-- **Konfirmasi Pembayaran:** Modul kasir untuk memverifikasi pembayaran pelanggan secara instan.
-- **Scroll Position Persistence:** Posisi scroll daftar data tetap bertahan dan tidak melompat ke atas saat melakukan refresh, penambahan, atau penghapusan data.
+- **User Management:** Direct management of employee and admin accounts (add, edit, delete) with access control permissions.
+- **Product Menu List:** Management of coffee, non-coffee, and pastry menu data (add, edit, delete).
+- **Order Queue Processing:** Real-time monitoring of incoming customer orders.
+- **Custom Cake Order Designs:** Review and management of custom cake design orders submitted by customers.
+- **Payment Confirmation:** Cashier module to instantly verify customer payments.
+- **Scroll Position Persistence:** The scroll position of data lists remains intact and does not jump to the top when refreshing, adding, or deleting data.
 
-## Keterangan Operasi CRUD
+## CRUD Operations Description
 
-Aplikasi Flutter ini memiliki modul CRUD (Create, Read, Update, Delete) yang terhubung ke server Spring Boot:
+This Flutter application features CRUD (Create, Read, Update, Delete) modules connected to a Spring Boot server:
 
-1. **Modul Manajemen User (CRUD Lengkap):**
-   - **Create:** Menambahkan akun pengguna baru (nama, username, password, dan level akses).
-   - **Read:** Menampilkan daftar seluruh akun karyawan/admin pada sistem.
-   - **Update:** Memperbarui data pengguna (nama, username, password, atau hak akses).
-   - **Delete:** Menghapus akun pengguna secara permanen dari database.
-2. **Modul Daftar Menu Produk (CRUD Lengkap):**
-   - **Create:** Menambahkan produk kopi/kue baru (nama produk, kategori, bagian, harga, deskripsi).
-   - **Read:** Menampilkan daftar seluruh menu aktif yang tersedia untuk pelanggan.
-   - **Update:** Mengubah detail informasi produk (nama, harga, deskripsi, dll.).
-   - **Delete:** Menghapus menu produk secara permanen dari sistem.
-3. **Modul Antrean & Pembayaran Pesanan (Update & Read):**
-   - **Read:** Membaca data pesanan masuk dan status pembayaran pelanggan.
-   - **Update:** Mengubah status pengerjaan pesanan (dari baru ke proses/selesai) dan memverifikasi pembayaran transaksi.
-   - **Delete:** Menghapus data pesanan dari daftar antrean jika dibatalkan.
-4. **Modul Desain Pesanan Kue Custom (CRUD Lengkap):**
-   - **Create:** Membuat data pemesanan desain baru.
-   - **Read:** Menampilkan daftar kiriman desain kue custom dari pelanggan.
-   - **Update:** Memperbarui detail status pengerjaan desain kue custom.
-   - **Delete:** Menghapus data desain dari daftar review.
+1. **User Management Module (Complete CRUD):**
+   - **Create:** Add a new user account (name, username, password, and access level).
+   - **Read:** Display the list of all employee/admin accounts in the system.
+   - **Update:** Update user data (name, username, password, or access rights).
+   - **Delete:** Permanently delete a user account from the database.
+2. **Product Menu List Module (Complete CRUD):**
+   - **Create:** Add new coffee/pastry products (product name, category, section, price, description).
+   - **Read:** Display the list of all active menus available to customers.
+   - **Update:** Modify product detail information (name, price, description, etc.).
+   - **Delete:** Permanently delete a product menu from the system.
+3. **Order Queue & Payment Module (Update & Read):**
+   - **Read:** Read incoming order data and customer payment statuses.
+   - **Update:** Change order processing status (from new to processing/completed) and verify transaction payments.
+   - **Delete:** Remove order data from the queue list if cancelled.
+4. **Custom Cake Order Design Module (Complete CRUD):**
+   - **Create:** Create new design order data.
+   - **Read:** Display the list of custom cake design submissions from customers.
+   - **Update:** Update the processing status details of custom cake designs.
+   - **Delete:** Remove design data from the review list.
 
-## Teknologi
+## Technology
 
 - **Framework:** Flutter (Dart)
-- **State & Data Persistence:** State Management Flutter, Integration Service
-- **Penyimpanan Lokal:** SQLite / Database Helper
-- **API Client:** HTTP Client terintegrasi dengan Spring Boot Server
+- **State & Data Persistence:** Flutter State Management, Integration Service
+- **Local Storage:** SQLite / Database Helper
+- **API Client:** HTTP Client integrated with Spring Boot Server
 
-## Arsitektur Docker (Backend & Web)
+## Docker Architecture (Backend & Web)
 
-Sistem pendukung untuk aplikasi ini (Backend dan Frontend Web) telah dikontainerisasi menggunakan **Docker**. Sistem berjalan di atas tiga container utama yang saling terhubung:
+The supporting systems for this application (Backend and Web Frontend) have been containerized using **Docker**. The system runs on three main interconnected containers:
 
-1. **`ta-database-coffeeshop`**: Container MySQL (Port `3307:3306`) yang menyimpan seluruh data aplikasi.
-2. **`ta-server-coffeeshop`**: Container backend Spring Boot (Port `8083:8083`) yang dihubungkan dengan aplikasi Flutter melalui API.
-3. **`ta-ci4-web-coffeeshop`**: Container frontend CodeIgniter 4 (Port `8080:80`) untuk pelanggan.
+1. **`ta-database-coffeeshop`**: MySQL Container (Port `3307:3306`) storing all application data.
+2. **`ta-server-coffeeshop`**: Spring Boot backend container (Port `8083:8083`) connected to the Flutter app via API.
+3. **`ta-ci4-web-coffeeshop`**: CodeIgniter 4 frontend container (Port `8080:80`) for customers.
 
-Dengan `docker-compose`, seluruh environment pendukung aplikasi Flutter ini dapat dibangun (build) dan dijalankan secara serentak.
+Using `docker-compose`, the entire supporting environment for this Flutter application can be built and run simultaneously.
 
-## Panduan Instalasi & Menjalankan Project
+## Installation & Running Guide
 
-Sebelum menjalankan aplikasi Flutter, pastikan Server dan Web sudah berjalan menggunakan Docker.
+Before running the Flutter application, ensure the Server and Web are running using Docker.
 
-### A. Menjalankan Server & Web (menggunakan Docker)
+### A. Running Server & Web (using Docker)
 
-Buka **Command Prompt (CMD)**, lalu ketik perintah ini:
+Open **Command Prompt (CMD)**, then type the following command:
 
 ```cmd
 cd C:\Dokumen
 docker compose up -d --build
 ```
 
-> **Penjelasan Perintah:**
-> - `cd C:\Dokumen` $\rightarrow$ Pindah ke folder lokasi Master Docker.
-> - `up -d` $\rightarrow$ Menyalakan seluruh container di background (agar CMD tidak terkunci).
-> - `--build` $\rightarrow$ Memastikan Docker mem-build versi kode terbaru dari Web & Server Anda.
+> **Command Explanation:**
+> - `cd C:\Dokumen` $\rightarrow$ Navigate to the Docker Master folder location.
+> - `up -d` $\rightarrow$ Start all containers in the background (preventing CMD from locking).
+> - `--build` $\rightarrow$ Ensure Docker builds the latest code version of your Web & Server.
 
-- Cek Status Container: `docker compose ps`
-- Melihat Log Server (Real-time): `docker compose logs -f`
-- Mematikan Sistem: `docker compose down`
+- Check Container Status: `docker compose ps`
+- View Server Logs (Real-time): `docker compose logs -f`
+- Stop the System: `docker compose down`
 
-### B. Menjalankan Aplikasi Flutter
+### B. Running the Flutter Application
 
-1. Pastikan Flutter SDK telah terinstal di komputer Anda.
-2. Hubungkan perangkat fisik Android atau jalankan Android Emulator.
-3. Clone repository ini ke dalam direktori lokal Anda.
-4. Jalankan perintah flutter pub get untuk mengunduh dependensi:
+1. Ensure the Flutter SDK is installed on your computer.
+2. Connect a physical Android device or launch an Android Emulator.
+3. Clone this repository to your local directory.
+4. Run flutter pub get to download dependencies:
    ```bash
    flutter pub get
    ```
-5. Jalankan aplikasi di emulator atau perangkat yang aktif:
+5. Run the application on an active emulator or device:
    ```bash
    flutter run
    ```
 
-## Deployment / Rilis via GitHub
+## Deployment / Release via GitHub
 
-Untuk mendistribusikan aplikasi Flutter (Android) melalui GitHub, Anda dapat membuat file rilis APK menggunakan fitur **GitHub Releases**:
+To distribute the Flutter application (Android) via GitHub, you can create a release APK file using the **GitHub Releases** feature:
 
-### Langkah Pembuatan Rilis APK
-1. Lakukan kompilasi aplikasi Flutter ke dalam mode rilis (release) untuk menghasilkan berkas APK:
+### APK Release Creation Steps
+1. Compile the Flutter application into release mode to generate the APK file:
    ```bash
    flutter build apk --release
    ```
-2. Berkas APK hasil kompilasi akan tersimpan pada folder `build/app/outputs/flutter-apk/app-release.apk`.
-3. Buka halaman repository GitHub Anda, lalu pilih menu **Releases** di bagian kanan halaman.
-4. Klik **Create a new release** (atau Draft a new release).
-5. Tentukan tag versi baru (misalnya `v1.0.0`) dan judul rilis Anda.
-6. Unggah berkas `app-release.apk` tersebut ke kolom upload binary rilis yang tersedia.
-7. Klik **Publish release** untuk membagikan file instalasi APK kepada pengguna lain.
+2. The compiled APK file will be saved in the `build/app/outputs/flutter-apk/app-release.apk` folder.
+3. Open your GitHub repository page, then select the **Releases** menu on the right side of the page.
+4. Click **Create a new release** (or Draft a new release).
+5. Set a new version tag ((e.g., `v1.0.0`) and your release title.
+6. Upload the `app-release.apk` file to the available release binary upload section.
+7. Click **Publish release** to share the APK installation file with other users.
 
 ---
 
-## Dokumentasi & Demo
+## Documentation & Demo
 
-Berikut adalah visualisasi antarmuka aplikasi Flutter pada emulator Android:
+The following is a visualization of the Flutter application interface on an Android emulator:
 
-| Fitur | Tampilan Dokumentasi | Deskripsi |
+| Feature | Documentation Preview | Description |
 | --- | --- | --- |
-| **Halaman Login** | ![Login](documentation/halaman_login.png) | Halaman masuk aplikasi untuk Admin dan Karyawan. |
-| **Dashboard Menu Utama** | ![Dashboard](documentation/dashboard_admin.png) | Halaman menu utama admin yang berisi opsi navigasi manajemen aplikasi. |
-| **Halaman Manajemen User** | ![Manajemen User](documentation/manajemen_user.png) | Antarmuka pengelolaan data akun karyawan dan level akses. |
-| **Daftar Menu Produk** | ![Daftar Menu](documentation/daftar_menu.png) | Antarmuka manajemen data produk kopi dan kue. |
-| **Daftar Pesanan Masuk** | ![Pesanan Masuk](documentation/antrean_pesanan.png) | Antrean data pesanan pelanggan reguler yang masuk ke sistem. |
-| **Desain Pesanan Custom** | ![Desain Custom](documentation/desain_custom.png) | Daftar review desain kue custom yang dikirim pelanggan. |
-| **Daftar Pesan Masuk** | ![Pesan Masuk](documentation/pesan_masuk.png) | Daftar review pesan masuk/masukan dari pelanggan. |
-| **Konfirmasi Pembayaran** | ![Konfirmasi Pembayaran](documentation/konfirmasi_pembayaran.png) | Modul kasir untuk melakukan verifikasi pembayaran pesanan. |
-| **Cuplikan Kode Injeksi JWT (ApiService)** | ![JWT Snippet](documentation/snippet_jwt_flutter.png) | Algoritma Dart yang membaca token JWT dari memori lalu menyisipkannya ke header Bearer setiap request API. |
-| **Docker Build & Up** | ![Docker Build](documentation/docker_build.png) | Proses kompilasi image dan inisialisasi container secara serentak menggunakan `docker compose up -d --build`. |
-| **Status Container (CLI)** | ![Docker PS](documentation/docker_ps.png) | Verifikasi container yang berjalan (Web, Server, DB) beserta port mapping-nya melalui `docker compose ps`. |
-| **Docker Desktop UI** | ![Docker Desktop](documentation/docker_desktop.png) | Tampilan manajemen visual container, resource usage, dan logs melalui Docker Desktop. |
+| **Login Page** | ![Login](documentation/halaman_login.png) | Application login page for Admins and Employees. |
+| **Main Menu Dashboard** | ![Dashboard](documentation/dashboard_admin.png) | Admin main menu page containing application management navigation options. |
+| **User Management Page** | ![Manajemen User](documentation/manajemen_user.png) | Employee account data and access level management interface. |
+| **Product Menu List** | ![Daftar Menu](documentation/daftar_menu.png) | Coffee and pastry product data management interface. |
+| **Incoming Order List** | ![Pesanan Masuk](documentation/antrean_pesanan.png) | Regular customer order queue entering the system. |
+| **Custom Design Orders** | ![Desain Custom](documentation/desain_custom.png) | Review list of custom cake designs sent by customers. |
+| **Incoming Message List** | ![Pesan Masuk](documentation/pesan_masuk.png) | Review list of incoming messages/feedback from customers. |
+| **Payment Confirmation** | ![Konfirmasi Pembayaran](documentation/konfirmasi_pembayaran.png) | Cashier module for verifying order payments. |
+| **JWT Injection Code Snippet (ApiService)** | ![JWT Snippet](documentation/snippet_jwt_flutter.png) | Dart algorithm reading the JWT token from memory and injecting it into the Bearer header of every API request. |
+| **Docker Build & Up** | ![Docker Build](documentation/docker_build.png) | Image compilation and simultaneous container initialization process using `docker compose up -d --build`. |
+| **Container Status (CLI)** | ![Docker PS](documentation/docker_ps.png) | Verification of running containers (Web, Server, DB) along with port mappings via `docker compose ps`. |
+| **Docker Desktop UI** | ![Docker Desktop](documentation/docker_desktop.png) | Visual management interface for containers, resource usage, and logs via Docker Desktop. |
