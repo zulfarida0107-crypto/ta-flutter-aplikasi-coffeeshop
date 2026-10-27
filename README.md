@@ -2,6 +2,10 @@
 
 Classic Coffee Admin & Cashier App — A cross-platform Flutter application tailored for administrators and employees, facilitating live order queue processing, custom cake reviews, and transaction updates.
 
+## 📺 Demo Video
+
+[![Demo Video Proyek Kedai Kopi](https://img.youtube.com/vi/i2iFWwCDxsc/0.jpg)](https://www.youtube.com/watch?v=i2iFWwCDxsc)
+
 ## Main Features
 
 - **User Management:** Direct management of employee and admin accounts (add, edit, delete) with access control permissions.
